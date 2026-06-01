@@ -1,0 +1,6 @@
+// .Net project files to ignore
+bin/
+obj/
+*.user
+*.suo
+*.vs/
