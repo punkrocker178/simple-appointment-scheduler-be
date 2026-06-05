@@ -147,3 +147,72 @@ erDiagram
 **TechnicianSkill** (Junction Table)
 - Many-to-many relationship between technician and skill
 - Allows tracking which skills each technician possesses
+
+## Authentication
+
+Authentication is separate from scheduling (`CUSTOMER` has no FK to auth `USER`).
+
+```mermaid
+erDiagram
+    USER {
+        guid id PK
+        string email UK
+        string passwordHash
+        guid roleId FK
+        string firstName
+        string lastName
+        boolean isActive
+        datetime createdAt
+    }
+
+    ROLE {
+        guid id PK
+        string name UK
+        string description
+    }
+
+    PERMISSION {
+        guid id PK
+        string name UK
+        string description
+    }
+
+    ROLE_PERMISSION {
+        guid roleId PK_FK
+        guid permissionId PK_FK
+    }
+
+    USER }o--|| ROLE : "has"
+    ROLE ||--o{ ROLE_PERMISSION : ""
+    PERMISSION ||--o{ ROLE_PERMISSION : ""
+```
+
+### Authentication entities
+
+**User**
+- Login account for the application API
+- Not linked to `Customer` in the current schema
+- Each user has exactly one `Role` via `RoleId`
+
+**Role**
+- Named access level (`Admin`, `Staff`, `User`)
+- Many-to-many with permissions through `RolePermission`
+
+**Permission**
+- String claim name used for authorization (e.g. `appointments:read:own`)
+- Seeded in [`AuthSeedData.cs`](../Infrastructure/Persistence/AuthSeedData.cs)
+
+**RolePermission** (Junction Table)
+- Many-to-many relationship between role and permission
+
+### Seed data (authentication)
+
+Default roles and permissions are seeded via EF Core `HasData` in the `AddAuthentication` migration.
+
+| Role | Permissions |
+|------|-------------|
+| Admin | `appointments:read`, `appointments:read:own`, `appointments:write`, `users:manage` |
+| Staff | `appointments:read`, `appointments:write` |
+| User | `appointments:read:own`, `appointments:write` |
+
+`appointments:read:own` is enforced in application code when JWT/endpoints are added (e.g. filter appointments by a future `User` ↔ `Customer` link). The database stores only the permission name.

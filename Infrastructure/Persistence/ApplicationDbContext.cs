@@ -23,6 +23,10 @@ public class ApplicationDbContext : DbContext
     public DbSet<Technician> Technicians => Set<Technician>();
     public DbSet<TechnicianSkill> TechnicianSkills => Set<TechnicianSkill>();
     public DbSet<Vehicle> Vehicles => Set<Vehicle>();
+    public DbSet<User> Users => Set<User>();
+    public DbSet<Role> Roles => Set<Role>();
+    public DbSet<Permission> Permissions => Set<Permission>();
+    public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
