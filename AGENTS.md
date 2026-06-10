@@ -25,8 +25,8 @@ dotnet run
 # Run with watch mode for hot reload
 dotnet watch run
 
-# Run tests (when tests are added)
-dotnet test
+# Run unit tests
+dotnet test universal-scheduler-be.Tests/universal-scheduler-be.Tests.csproj
 
 # Entity Framework Core commands
 # Add a new migration
@@ -133,8 +133,13 @@ dotnet ef migrations script
 │   ├── entity-relationship-diagram.md   # Full ERD documentation
 │   └── relationship-map.md
 ├── .vscode/
-│   ├── launch.json              # Debug configurations
+│   ├── launch.json              # Debug configurations (set ASPNETCORE_URLS — launchSettings not used when launching DLL)
 │   └── tasks.json               # Build task
+├── universal-scheduler-be.Tests/ # xUnit unit tests (Moq, EF InMemory)
+│   ├── Controllers/
+│   ├── Services/
+│   └── Helpers/
+├── reflections/                 # Post-session reflection records
 ├── Program.cs                   # Application entry point
 ├── appsettings.json            # Production configuration
 ├── appsettings.Development.json # Development configuration
@@ -212,6 +217,8 @@ Non-secret defaults live in `appsettings.json` (`Jwt:Issuer`, `Jwt:Audience`, `A
 - `User` entities handle login (not linked to `Customer` currently)
 - `Role` → `Permission` many-to-many via `RolePermission`
 - JWT auth via `AuthController` (`POST /api/auth/login`, `POST /api/auth/register`, `GET /api/auth/me`)
+- Register returns `RegisterResponse` (email, role); login returns `AuthResponse` (token, expiresAt, email, role)
+- Login errors: unknown/wrong credentials → `"Invalid email or password."`; inactive account → `"Account is inactive."`
 - Admin user seeded at startup when `AdminSeed:Email` does not exist
 
 ### Key Relationships
@@ -226,6 +233,10 @@ Non-secret defaults live in `appsettings.json` (`Jwt:Issuer`, `Jwt:Audience`, `A
 - Entity Framework configured with PostgreSQL
 - Authentication entities (User/Role/Permission) migrated with role/permission seed data
 - JWT login, register, and `/me` implemented in `Controllers/AuthController.cs`
+- Unit test project with 18 auth tests (`universal-scheduler-be.Tests`)
+- VS Code debug config for .NET 10 (`.vscode/launch.json`)
+- Cursor rule `.cursor/rules/agents-md.mdc` points agents to this file each session
+- **Next priority**: appointment scheduling endpoints
 - Business scheduling endpoints (appointments, customers, etc.) not yet implemented
 
 ---
@@ -350,6 +361,6 @@ After the human responds:
 
 <!-- TODO: Fill in as project evolves -->
 - [ ] Add API endpoint documentation (OpenAPI/Swagger)
-- [ ] Add integration test project
+- [ ] Add integration test project (unit tests exist in `universal-scheduler-be.Tests`)
 - [ ] Document deployment process
 - [ ] Add CI/CD pipeline configuration

@@ -80,9 +80,14 @@ public class AuthService : IAuthService
                 .ThenInclude(rp => rp.Permission)
             .FirstOrDefaultAsync(u => u.Email == request.Email.Trim(), cancellationToken);
 
-        if (user is null || !user.IsActive)
+        if (user is null)
         {
             return AuthResult.Unauthorized("Invalid email or password.");
+        }
+
+        if (!user.IsActive)
+        {
+            return AuthResult.Unauthorized("Account is inactive.");
         }
 
         var verification = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.Password);

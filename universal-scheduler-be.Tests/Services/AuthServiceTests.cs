@@ -196,7 +196,7 @@ public class AuthServiceTests
         });
 
         Assert.Equal(StatusCodes.Status401Unauthorized, result.StatusCode);
-        Assert.Equal("Invalid email or password.", result.Error);
+        Assert.Equal("Account is inactive.", result.Error);
     }
 
     [Theory]
