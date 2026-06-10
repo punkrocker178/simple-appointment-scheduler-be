@@ -60,17 +60,22 @@ dotnet ef migrations script
 - **Files**: Match class name exactly
 
 ### Architecture Patterns
+- **ASP.NET Core API Controllers**: Expose HTTP APIs via `[ApiController]` classes in `Controllers/` — do not use minimal APIs (`MapGet` / `MapPost`) for application endpoints
 - **Entity Framework Core**: Code-first with explicit entity configurations
 - **Repository Pattern**: DbContext serves as the unit of work
 - **Configuration**: Use `IConfiguration` for settings, connection strings in `appsettings.json`
 
 ### Code Organization
+- API controllers in `Controllers/` (e.g. `AuthController.cs`)
+- Application services and their interfaces in `Infrastructure/Services/`
+- Auth support types (DTOs, options, authorization helpers) in `Infrastructure/Auth/`
 - Place entity configurations in `Infrastructure/Persistence/Configurations/`
 - Entity classes in `Infrastructure/Entities/`
 - Seed data in `Infrastructure/Persistence/AuthSeedData.cs`
 - Migrations auto-generated in `Migrations/`
 
 ### Key Rules
+- Use API controllers for all HTTP endpoints; register with `AddControllers()` and `MapControllers()` in `Program.cs`
 - Always use explicit entity configurations for EF Core relationships
 - Keep entities POCO (plain C# objects) - avoid logic in entity classes
 - Use `Guid` for primary keys (configured in EF to auto-generate)
@@ -82,7 +87,19 @@ dotnet ef migrations script
 
 ```
 .
+├── Controllers/                  # ASP.NET Core API controllers
+│   └── AuthController.cs
 ├── Infrastructure/
+│   ├── Auth/                     # Auth DTOs, JWT options, authorization helpers
+│   │   ├── Dtos/
+│   │   ├── AuthResult.cs
+│   │   ├── AuthorizationExtensions.cs
+│   │   └── JwtOptions.cs
+│   ├── Services/                 # Application services
+│   │   ├── AuthService.cs
+│   │   ├── IAuthService.cs
+│   │   ├── JwtTokenService.cs
+│   │   └── IJwtTokenService.cs
 │   ├── Entities/                 # EF Core entity classes
 │   │   ├── Appointment.cs
 │   │   ├── Customer.cs
@@ -99,6 +116,7 @@ dotnet ef migrations script
 │   │   └── Vehicle.cs
 │   └── Persistence/
 │       ├── ApplicationDbContext.cs      # Main EF Core DbContext
+│       ├── AdminUserSeeder.cs           # Runtime admin user seed
 │       ├── AuthSeedData.cs              # Role/permission seed data
 │       ├── DesignTimeDbContextFactory.cs # EF CLI support
 │       └── Configurations/              # EF entity configurations
@@ -145,7 +163,13 @@ Copy connection string and settings to `appsettings.Development.json` for local 
 
 ### External Services
 - **PostgreSQL**: Required for data persistence
-- <!-- TODO: Add JWT signing key configuration when authentication endpoints are implemented -->
+
+### JWT & Admin Seed (User Secrets in development)
+```bash
+dotnet user-secrets set "Jwt:Key" "<32+ character secret>"
+dotnet user-secrets set "AdminSeed:Password" "<admin password>"
+```
+Non-secret defaults live in `appsettings.json` (`Jwt:Issuer`, `Jwt:Audience`, `AdminSeed:Email`, etc.).
 
 ---
 
@@ -187,7 +211,8 @@ Copy connection string and settings to `appsettings.Development.json` for local 
 **Authentication Model (Separate from Scheduling):**
 - `User` entities handle login (not linked to `Customer` currently)
 - `Role` → `Permission` many-to-many via `RolePermission`
-- JWT authentication configured but endpoints not yet implemented
+- JWT auth via `AuthController` (`POST /api/auth/login`, `POST /api/auth/register`, `GET /api/auth/me`)
+- Admin user seeded at startup when `AdminSeed:Email` does not exist
 
 ### Key Relationships
 - `Dealership` 1:* `Technician`, `ServiceBay`, `ServiceType`
@@ -199,9 +224,9 @@ Copy connection string and settings to `appsettings.Development.json` for local 
 ### Current State
 - Database schema established with migrations
 - Entity Framework configured with PostgreSQL
-- Authentication entities (User/Role/Permission) migrated
-- JWT packages included but API endpoints not yet implemented
-- Only sample `WeatherForecast` endpoint exists in `Program.cs`
+- Authentication entities (User/Role/Permission) migrated with role/permission seed data
+- JWT login, register, and `/me` implemented in `Controllers/AuthController.cs`
+- Business scheduling endpoints (appointments, customers, etc.) not yet implemented
 
 ---
 
@@ -314,9 +339,9 @@ After the human responds:
     "q2": "Yes, support both web and mobile clients"
   },
   "important_pointers": [
-    "Program.cs: JWT configuration lines 45-60",
-    "Infrastructure/Auth/JwtService.cs",
-    "POST /api/auth/login endpoint"
+    "Program.cs: JWT configuration",
+    "Infrastructure/Services/JwtTokenService.cs",
+    "Controllers/AuthController.cs"
   ]
 }
 ```

@@ -1,6 +1,33 @@
 @universal_scheduler_be_HostAddress = http://localhost:5210
+@token = {{login.response.body.token}}
 
-GET {{universal_scheduler_be_HostAddress}}/weatherforecast/
-Accept: application/json
+### Login (admin — set AdminSeed:Password in User Secrets)
+# @name login
+POST {{universal_scheduler_be_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@localhost",
+  "password": "ChangeMe123!"
+}
+
+###
+
+### Register (open — always assigns User role)
+POST {{universal_scheduler_be_HostAddress}}/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "Password123!",
+  "firstName": "Test",
+  "lastName": "User"
+}
+
+###
+
+### Current user (requires bearer token from login)
+GET {{universal_scheduler_be_HostAddress}}/api/auth/me
+Authorization: Bearer {{token}}
 
 ###

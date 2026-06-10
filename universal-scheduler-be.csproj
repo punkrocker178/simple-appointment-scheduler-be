@@ -5,7 +5,15 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>universal_scheduler_be</RootNamespace>
+    <UserSecretsId>universal-scheduler-be-dev</UserSecretsId>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="universal-scheduler-be.Tests/**" />
+    <Content Remove="universal-scheduler-be.Tests/**" />
+    <EmbeddedResource Remove="universal-scheduler-be.Tests/**" />
+    <None Remove="universal-scheduler-be.Tests/**" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.5" />
@@ -14,6 +22,7 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.0" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="10.0.0" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.0" />
   </ItemGroup>
 
