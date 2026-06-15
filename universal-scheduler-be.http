@@ -72,3 +72,71 @@ Content-Type: application/json
 }
 
 ###
+
+### List skills (Admin only — requires skills:read)
+GET {{universal_scheduler_be_HostAddress}}/api/skills
+Authorization: Bearer {{token}}
+
+###
+
+### Create skill (Admin only — requires skills:write)
+POST {{universal_scheduler_be_HostAddress}}/api/skills
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Brakes",
+  "description": "Brake repair and maintenance"
+}
+
+###
+
+### Delete skill
+@skillId = 00000000-0000-0000-0000-000000000000
+DELETE {{universal_scheduler_be_HostAddress}}/api/skills/{{skillId}}
+Authorization: Bearer {{token}}
+
+###
+
+### List service types for dealership (Admin only — requires servicetypes:read)
+GET {{universal_scheduler_be_HostAddress}}/api/dealerships/{{dealershipId}}/service-types
+Authorization: Bearer {{token}}
+
+###
+
+### Create service type (Admin only — requires servicetypes:write)
+POST {{universal_scheduler_be_HostAddress}}/api/dealerships/{{dealershipId}}/service-types
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "skillId": "{{skillId}}",
+  "name": "Brake Pad Replacement",
+  "description": "Front brake pad replacement",
+  "durationMinutes": 60,
+  "price": 149.99
+}
+
+###
+
+### Update service type
+@serviceTypeId = 00000000-0000-0000-0000-000000000000
+PUT {{universal_scheduler_be_HostAddress}}/api/dealerships/{{dealershipId}}/service-types/{{serviceTypeId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "skillId": "{{skillId}}",
+  "name": "Brake Pad Replacement — Premium",
+  "description": "Front brake pad replacement with premium pads",
+  "durationMinutes": 75,
+  "price": 179.99
+}
+
+###
+
+### Deactivate service type (soft delete)
+DELETE {{universal_scheduler_be_HostAddress}}/api/dealerships/{{dealershipId}}/service-types/{{serviceTypeId}}
+Authorization: Bearer {{token}}
+
+###

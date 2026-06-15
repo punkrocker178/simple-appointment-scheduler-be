@@ -1,7 +1,7 @@
 # Implementation Plan & Progress Tracker
 
-**Last updated:** 2026-06-11  
-**Current phase:** Phase 3 — Core CRUD (in progress; Dealership complete)
+**Last updated:** 2026-06-15  
+**Current phase:** Phase 3 — Core CRUD (in progress; Dealership, Skill, ServiceType complete)
 
 Use this document to track what is done, in progress, and pending. Update checkboxes and the phase summary when tasks land.
 
@@ -22,7 +22,7 @@ Use this document to track what is done, in progress, and pending. Update checkb
 |-------|------|--------|-------|
 | 1 | Infrastructure Setup | ✅ Complete | EF Core + PostgreSQL + migrations |
 | 2 | Authentication | ✅ Complete | JWT, User, register/login; `[Authorize]` on `/api/auth/me` only until Phase 3 |
-| 3 | Core CRUD Endpoints | 🔶 In progress | Dealership CRUD done; 7 features remaining |
+| 3 | Core CRUD Endpoints | 🔶 In progress | Dealership, Skill, ServiceType done; 5 features remaining |
 | 4 | Appointment Booking | ⬜ Not started | `Appointments` table exists; no API or scheduling logic |
 | 5 | Appointment Lifecycle | ⬜ Not started | `AppointmentStatus` enum in code only |
 | 6 | Validation & Error Handling | ⬜ Not started | Manual validation in auth only |
@@ -71,9 +71,9 @@ Build in this order — each feature should be shippable on its own.
 | # | Feature | Endpoints | Status |
 |---|---------|-----------|--------|
 | 1 | **Dealership** | GET all, GET by id, POST, PUT | ✅ |
-| 2 | **Skill** | GET all, POST, DELETE | ⬜ |
+| 2 | **Skill** | GET all, POST, DELETE | ✅ |
 | 3 | **ServiceBay** | GET by dealership, POST, PUT, soft delete | ⬜ |
-| 4 | **ServiceType** | GET by dealership, POST, PUT, soft delete | ⬜ |
+| 4 | **ServiceType** | GET by dealership, POST, PUT, soft delete | ✅ |
 | 5 | **Technician** | GET by dealership, POST, PUT, soft delete | ⬜ |
 | 6 | **TechnicianSkill** | POST (assign), DELETE (remove) | ⬜ |
 | 7 | **Customer** | GET, POST, PUT | ⬜ |
@@ -159,7 +159,7 @@ Most important phase — implement carefully after Phase 3 CRUD is stable.
 
 ## Recommended next session
 
-1. **Phase 3, feature 2** — **Skill** CRUD (GET all, POST, DELETE).
+1. **Phase 3, feature 3** — **ServiceBay** CRUD (GET by dealership, POST, PUT, soft delete).
 2. Reuse `ServiceResult<T>`, `[Authorize]` + permission policies pattern from Dealership.
 3. Keep `universal-scheduler-be.http` updated for manual testing.
 

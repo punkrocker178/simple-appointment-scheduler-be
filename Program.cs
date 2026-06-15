@@ -19,6 +19,8 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IDealershipService, DealershipService>();
+builder.Services.AddScoped<ISkillService, SkillService>();
+builder.Services.AddScoped<IServiceTypeService, ServiceTypeService>();
 builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
 builder.Services.AddSingleton<IPasswordHasher<User>, PasswordHasher<User>>();
 
