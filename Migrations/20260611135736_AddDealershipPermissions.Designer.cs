@@ -3,6 +3,7 @@ using System;
 using Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace universal_scheduler_be.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260611135736_AddDealershipPermissions")]
+    partial class AddDealershipPermissions
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -169,13 +172,13 @@ namespace universal_scheduler_be.Migrations
                         new
                         {
                             Id = new Guid("a1000001-0000-4000-8000-000000000005"),
-                            Description = "View dealerships (admin only)",
+                            Description = "View dealerships",
                             Name = "dealerships:read"
                         },
                         new
                         {
                             Id = new Guid("a1000001-0000-4000-8000-000000000006"),
-                            Description = "Create and update dealerships (admin only)",
+                            Description = "Create and update dealerships",
                             Name = "dealerships:write"
                         });
                 });
@@ -275,6 +278,16 @@ namespace universal_scheduler_be.Migrations
                         {
                             RoleId = new Guid("b2000001-0000-4000-8000-000000000002"),
                             PermissionId = new Guid("a1000001-0000-4000-8000-000000000003")
+                        },
+                        new
+                        {
+                            RoleId = new Guid("b2000001-0000-4000-8000-000000000002"),
+                            PermissionId = new Guid("a1000001-0000-4000-8000-000000000005")
+                        },
+                        new
+                        {
+                            RoleId = new Guid("b2000001-0000-4000-8000-000000000002"),
+                            PermissionId = new Guid("a1000001-0000-4000-8000-000000000006")
                         },
                         new
                         {

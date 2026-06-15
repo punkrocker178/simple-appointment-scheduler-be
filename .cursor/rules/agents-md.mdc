@@ -13,10 +13,6 @@ At the start of each session, read `AGENTS.md` at the repo root for:
 
 Do not duplicate `AGENTS.md` in other files. Keep `AGENTS.md` as the single source of truth for cross-tool agent guidance (Cursor, Codex, Copilot, etc.).
 
-## Next session priority
-
-**Appointment scheduling endpoints** — auth is in place; focus on CRUD/scheduling APIs behind permission policies (`appointments:read`, `appointments:write`, etc.).
-
 ## Auth conventions (confirmed)
 
 - Register returns `{ email, role }` only — no token; clients login separately

@@ -17,5 +17,11 @@ public static class AuthorizationExtensions
 
         options.AddPolicy("users:manage", policy =>
             policy.RequireClaim("permission", "users:manage"));
+
+        options.AddPolicy("dealerships:read", policy =>
+            policy.RequireClaim("permission", "dealerships:read"));
+
+        options.AddPolicy("dealerships:write", policy =>
+            policy.RequireClaim("permission", "dealerships:write"));
     }
 }
