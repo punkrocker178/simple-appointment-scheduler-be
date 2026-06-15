@@ -31,3 +31,44 @@ GET {{universal_scheduler_be_HostAddress}}/api/auth/me
 Authorization: Bearer {{token}}
 
 ###
+
+### List dealerships (Admin only — requires dealerships:read)
+GET {{universal_scheduler_be_HostAddress}}/api/dealerships
+Authorization: Bearer {{token}}
+
+###
+
+### Get dealership by id
+@dealershipId = 00000000-0000-0000-0000-000000000000
+GET {{universal_scheduler_be_HostAddress}}/api/dealerships/{{dealershipId}}
+Authorization: Bearer {{token}}
+
+###
+
+### Create dealership (Admin only — requires dealerships:write)
+POST {{universal_scheduler_be_HostAddress}}/api/dealerships
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Downtown Auto",
+  "address": "123 Main St, Austin, TX 78701",
+  "phone": "+1-512-555-0100",
+  "timezone": "America/Chicago"
+}
+
+###
+
+### Update dealership
+PUT {{universal_scheduler_be_HostAddress}}/api/dealerships/{{dealershipId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Downtown Auto — Updated",
+  "address": "456 Congress Ave, Austin, TX 78701",
+  "phone": "+1-512-555-0199",
+  "timezone": "America/Chicago"
+}
+
+###

@@ -66,13 +66,21 @@ dotnet ef migrations script
 - **Configuration**: Use `IConfiguration` for settings, connection strings in `appsettings.json`
 
 ### Code Organization
-- API controllers in `Controllers/` (e.g. `AuthController.cs`)
+- API controllers in `Controllers/` (e.g. `AuthController.cs`, `DealershipController.cs`)
 - Application services and their interfaces in `Infrastructure/Services/`
+- Feature DTOs in `Infrastructure/<Feature>/Dtos/` (e.g. `Infrastructure/Dealerships/Dtos/`)
+- Shared non-auth result types in `Infrastructure/Common/` (e.g. `ServiceResult<T>`)
 - Auth support types (DTOs, options, authorization helpers) in `Infrastructure/Auth/`
 - Place entity configurations in `Infrastructure/Persistence/Configurations/`
 - Entity classes in `Infrastructure/Entities/`
 - Seed data in `Infrastructure/Persistence/AuthSeedData.cs`
 - Migrations auto-generated in `Migrations/`
+
+### CRUD Endpoint Pattern (Phase 3+)
+- Service returns `ServiceResult<T>` with `Data`, `Error`, and `StatusCode` — controller maps to HTTP via `Problem()` for errors
+- Controllers use class-level `[Authorize]` plus action-level permission policies (e.g. `dealerships:read`, `dealerships:write`)
+- Register services in `Program.cs`; add permission policies in `AuthorizationExtensions.AddPermissionPolicies`
+- Seed new permissions in `AuthSeedData` and add an EF migration when introducing policies
 
 ### Key Rules
 - Use API controllers for all HTTP endpoints; register with `AddControllers()` and `MapControllers()` in `Program.cs`
@@ -88,16 +96,21 @@ dotnet ef migrations script
 ```
 .
 ├── Controllers/                  # ASP.NET Core API controllers
-│   └── AuthController.cs
+│   ├── AuthController.cs
+│   └── DealershipController.cs
 ├── Infrastructure/
 │   ├── Auth/                     # Auth DTOs, JWT options, authorization helpers
 │   │   ├── Dtos/
 │   │   ├── AuthResult.cs
 │   │   ├── AuthorizationExtensions.cs
 │   │   └── JwtOptions.cs
+│   ├── Common/                   # Shared types (e.g. ServiceResult<T>)
+│   ├── Dealerships/Dtos/         # Dealership request/response DTOs
 │   ├── Services/                 # Application services
 │   │   ├── AuthService.cs
 │   │   ├── IAuthService.cs
+│   │   ├── DealershipService.cs
+│   │   ├── IDealershipService.cs
 │   │   ├── JwtTokenService.cs
 │   │   └── IJwtTokenService.cs
 │   ├── Entities/                 # EF Core entity classes
@@ -128,8 +141,11 @@ dotnet ef migrations script
 ├── Migrations/                   # EF Core auto-generated migrations
 │   ├── 20260529185128_InitialCreate.cs
 │   ├── 20260605061000_AddAuthentication.cs
+│   ├── 20260611135736_AddDealershipPermissions.cs
+│   ├── 20260611144910_RestrictDealershipPermissionsToAdmin.cs
 │   └── ApplicationDbContextModelSnapshot.cs
 ├── docs/
+│   ├── IMPLEMENTATION_PLAN.md           # Phased progress tracker
 │   ├── entity-relationship-diagram.md   # Full ERD documentation
 │   └── relationship-map.md
 ├── .vscode/
@@ -220,6 +236,8 @@ Non-secret defaults live in `appsettings.json` (`Jwt:Issuer`, `Jwt:Audience`, `A
 - Register returns `RegisterResponse` (email, role); login returns `AuthResponse` (token, expiresAt, email, role)
 - Login errors: unknown/wrong credentials → `"Invalid email or password."`; inactive account → `"Account is inactive."`
 - Admin user seeded at startup when `AdminSeed:Email` does not exist
+- Business endpoints use permission policies (`dealerships:read`, `dealerships:write`, etc.) — claims are embedded in the JWT at login; users must re-login after permission migrations
+- `dealerships:read` and `dealerships:write` are **Admin only** (Staff/User do not receive these claims)
 
 ### Key Relationships
 - `Dealership` 1:* `Technician`, `ServiceBay`, `ServiceType`
@@ -229,15 +247,18 @@ Non-secret defaults live in `appsettings.json` (`Jwt:Issuer`, `Jwt:Audience`, `A
 - `Appointment` links multiple entities for scheduling
 
 ### Current State
+- **Progress tracker**: [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md) — Phases 1–2 complete; Phase 3 in progress (Dealership done; 7 features remaining)
 - Database schema established with migrations
 - Entity Framework configured with PostgreSQL
 - Authentication entities (User/Role/Permission) migrated with role/permission seed data
 - JWT login, register, and `/me` implemented in `Controllers/AuthController.cs`
-- Unit test project with 18 auth tests (`universal-scheduler-be.Tests`)
+- **Dealership CRUD** implemented — `GET/POST/PUT /api/dealerships` with `dealerships:read` / `dealerships:write` policies (`Controllers/DealershipController.cs`, `Infrastructure/Services/DealershipService.cs`)
+- Unit test project with **40 tests** — 18 auth + 22 dealership (`universal-scheduler-be.Tests`)
 - VS Code debug config for .NET 10 (`.vscode/launch.json`)
 - Cursor rule `.cursor/rules/agents-md.mdc` points agents to this file each session
-- **Next priority**: appointment scheduling endpoints
-- Business scheduling endpoints (appointments, customers, etc.) not yet implemented
+- Session notes: [reflections/2026-06-11_dealership_crud.md](reflections/2026-06-11_dealership_crud.md)
+- **Next priority**: Phase 3 feature 2 — **Skill** CRUD (`GET` all, `POST`, `DELETE`); reuse `ServiceResult<T>` and permission-policy pattern from Dealership
+- Remaining business endpoints: Skill, ServiceBay, ServiceType, Technician, TechnicianSkill, Customer, Vehicle, then appointment booking (Phase 4)
 
 ---
 
@@ -359,8 +380,8 @@ After the human responds:
 
 ---
 
-<!-- TODO: Fill in as project evolves -->
-- [ ] Add API endpoint documentation (OpenAPI/Swagger)
-- [ ] Add integration test project (unit tests exist in `universal-scheduler-be.Tests`)
+<!-- TODO: Fill in as project evolves — see docs/IMPLEMENTATION_PLAN.md for phased tracker -->
+- [x] Phase 3–8 items tracked in [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md)
+- [x] Phase 3 feature 1 (Dealership CRUD) — see [reflections/2026-06-11_dealership_crud.md](reflections/2026-06-11_dealership_crud.md)
 - [ ] Document deployment process
 - [ ] Add CI/CD pipeline configuration

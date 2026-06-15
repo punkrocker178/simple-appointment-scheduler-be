@@ -10,6 +10,8 @@ public static class AuthSeedData
         public static readonly Guid AppointmentsReadOwn = Guid.Parse("a1000001-0000-4000-8000-000000000002");
         public static readonly Guid AppointmentsWrite = Guid.Parse("a1000001-0000-4000-8000-000000000003");
         public static readonly Guid UsersManage = Guid.Parse("a1000001-0000-4000-8000-000000000004");
+        public static readonly Guid DealershipsRead = Guid.Parse("a1000001-0000-4000-8000-000000000005");
+        public static readonly Guid DealershipsWrite = Guid.Parse("a1000001-0000-4000-8000-000000000006");
     }
 
     public static class RoleIds
@@ -44,6 +46,18 @@ public static class AuthSeedData
             Id = PermissionIds.UsersManage,
             Name = "users:manage",
             Description = "Manage users and roles"
+        },
+        new Permission
+        {
+            Id = PermissionIds.DealershipsRead,
+            Name = "dealerships:read",
+            Description = "View dealerships (admin only)"
+        },
+        new Permission
+        {
+            Id = PermissionIds.DealershipsWrite,
+            Name = "dealerships:write",
+            Description = "Create and update dealerships (admin only)"
         }
     ];
 
@@ -75,6 +89,8 @@ public static class AuthSeedData
         new RolePermission { RoleId = RoleIds.Admin, PermissionId = PermissionIds.AppointmentsReadOwn },
         new RolePermission { RoleId = RoleIds.Admin, PermissionId = PermissionIds.AppointmentsWrite },
         new RolePermission { RoleId = RoleIds.Admin, PermissionId = PermissionIds.UsersManage },
+        new RolePermission { RoleId = RoleIds.Admin, PermissionId = PermissionIds.DealershipsRead },
+        new RolePermission { RoleId = RoleIds.Admin, PermissionId = PermissionIds.DealershipsWrite },
         new RolePermission { RoleId = RoleIds.Staff, PermissionId = PermissionIds.AppointmentsRead },
         new RolePermission { RoleId = RoleIds.Staff, PermissionId = PermissionIds.AppointmentsWrite },
         new RolePermission { RoleId = RoleIds.User, PermissionId = PermissionIds.AppointmentsReadOwn },
