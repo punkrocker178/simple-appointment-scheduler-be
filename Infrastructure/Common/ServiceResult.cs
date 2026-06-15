@@ -17,4 +17,10 @@ public class ServiceResult<T>
 
     public static ServiceResult<T> NotFound(string error) =>
         new() { Error = error, StatusCode = StatusCodes.Status404NotFound };
+
+    public static ServiceResult<T> Conflict(string error) =>
+        new() { Error = error, StatusCode = StatusCodes.Status409Conflict };
+
+    public static ServiceResult<T> NoContent() =>
+        new() { StatusCode = StatusCodes.Status204NoContent };
 }
