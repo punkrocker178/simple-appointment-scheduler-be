@@ -21,6 +21,8 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IDealershipService, DealershipService>();
 builder.Services.AddScoped<ISkillService, SkillService>();
 builder.Services.AddScoped<IServiceTypeService, ServiceTypeService>();
+builder.Services.AddScoped<IServiceBayService, ServiceBayService>();
+builder.Services.AddScoped<ITechnicianService, TechnicianService>();
 builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
 builder.Services.AddSingleton<IPasswordHasher<User>, PasswordHasher<User>>();
 

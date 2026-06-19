@@ -35,5 +35,17 @@ public static class AuthorizationExtensions
 
         options.AddPolicy("servicetypes:write", policy =>
             policy.RequireClaim("permission", "servicetypes:write"));
+
+        options.AddPolicy("servicebays:read", policy =>
+            policy.RequireClaim("permission", "servicebays:read"));
+
+        options.AddPolicy("servicebays:write", policy =>
+            policy.RequireClaim("permission", "servicebays:write"));
+
+        options.AddPolicy("technicians:read", policy =>
+            policy.RequireClaim("permission", "technicians:read"));
+
+        options.AddPolicy("technicians:write", policy =>
+            policy.RequireClaim("permission", "technicians:write"));
     }
 }

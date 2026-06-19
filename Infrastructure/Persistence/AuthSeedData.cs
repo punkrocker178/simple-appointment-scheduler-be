@@ -16,6 +16,10 @@ public static class AuthSeedData
         public static readonly Guid SkillsWrite = Guid.Parse("a1000001-0000-4000-8000-000000000008");
         public static readonly Guid ServiceTypesRead = Guid.Parse("a1000001-0000-4000-8000-000000000009");
         public static readonly Guid ServiceTypesWrite = Guid.Parse("a1000001-0000-4000-8000-00000000000a");
+        public static readonly Guid ServiceBaysRead = Guid.Parse("a1000001-0000-4000-8000-00000000000b");
+        public static readonly Guid ServiceBaysWrite = Guid.Parse("a1000001-0000-4000-8000-00000000000c");
+        public static readonly Guid TechniciansRead = Guid.Parse("a1000001-0000-4000-8000-00000000000d");
+        public static readonly Guid TechniciansWrite = Guid.Parse("a1000001-0000-4000-8000-00000000000e");
     }
 
     public static class RoleIds
@@ -86,6 +90,30 @@ public static class AuthSeedData
             Id = PermissionIds.ServiceTypesWrite,
             Name = "servicetypes:write",
             Description = "Create, update, and deactivate service types (admin only)"
+        },
+        new Permission
+        {
+            Id = PermissionIds.ServiceBaysRead,
+            Name = "servicebays:read",
+            Description = "View service bays (admin only)"
+        },
+        new Permission
+        {
+            Id = PermissionIds.ServiceBaysWrite,
+            Name = "servicebays:write",
+            Description = "Create, update, and deactivate service bays (admin only)"
+        },
+        new Permission
+        {
+            Id = PermissionIds.TechniciansRead,
+            Name = "technicians:read",
+            Description = "View technicians (admin only)"
+        },
+        new Permission
+        {
+            Id = PermissionIds.TechniciansWrite,
+            Name = "technicians:write",
+            Description = "Create, update, and deactivate technicians (admin only)"
         }
     ];
 
@@ -123,6 +151,10 @@ public static class AuthSeedData
         new RolePermission { RoleId = RoleIds.Admin, PermissionId = PermissionIds.SkillsWrite },
         new RolePermission { RoleId = RoleIds.Admin, PermissionId = PermissionIds.ServiceTypesRead },
         new RolePermission { RoleId = RoleIds.Admin, PermissionId = PermissionIds.ServiceTypesWrite },
+        new RolePermission { RoleId = RoleIds.Admin, PermissionId = PermissionIds.ServiceBaysRead },
+        new RolePermission { RoleId = RoleIds.Admin, PermissionId = PermissionIds.ServiceBaysWrite },
+        new RolePermission { RoleId = RoleIds.Admin, PermissionId = PermissionIds.TechniciansRead },
+        new RolePermission { RoleId = RoleIds.Admin, PermissionId = PermissionIds.TechniciansWrite },
         new RolePermission { RoleId = RoleIds.Staff, PermissionId = PermissionIds.AppointmentsRead },
         new RolePermission { RoleId = RoleIds.Staff, PermissionId = PermissionIds.AppointmentsWrite },
         new RolePermission { RoleId = RoleIds.User, PermissionId = PermissionIds.AppointmentsReadOwn },
