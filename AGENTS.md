@@ -247,18 +247,22 @@ Non-secret defaults live in `appsettings.json` (`Jwt:Issuer`, `Jwt:Audience`, `A
 - `Appointment` links multiple entities for scheduling
 
 ### Current State
-- **Progress tracker**: [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md) — Phases 1–2 complete; Phase 3 in progress (Dealership done; 7 features remaining)
+- **Progress tracker**: [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md) — Phases 1–2 complete; Phase 3 in progress (Dealership, Skill, ServiceType, ServiceBay, Technician done; 3 features remaining)
 - Database schema established with migrations
 - Entity Framework configured with PostgreSQL
 - Authentication entities (User/Role/Permission) migrated with role/permission seed data
 - JWT login, register, and `/me` implemented in `Controllers/AuthController.cs`
 - **Dealership CRUD** implemented — `GET/POST/PUT /api/dealerships` with `dealerships:read` / `dealerships:write` policies (`Controllers/DealershipController.cs`, `Infrastructure/Services/DealershipService.cs`)
-- Unit test project with **40 tests** — 18 auth + 22 dealership (`universal-scheduler-be.Tests`)
+- **Skill CRUD** implemented — `GET/POST/DELETE /api/skills` with `skills:read` / `skills:write` policies
+- **ServiceType CRUD** implemented — nested under `/api/dealerships/{id}/service-types` with `servicetypes:read` / `servicetypes:write`
+- **ServiceBay CRUD** implemented — nested under `/api/dealerships/{id}/service-bays` with `servicebays:read` / `servicebays:write`
+- **Technician CRUD** implemented — nested under `/api/dealerships/{id}/technicians` with `technicians:read` / `technicians:write`
+- Unit test project with **89 tests** (`universal-scheduler-be.Tests`)
 - VS Code debug config for .NET 10 (`.vscode/launch.json`)
 - Cursor rule `.cursor/rules/agents-md.mdc` points agents to this file each session
 - Session notes: [reflections/2026-06-11_dealership_crud.md](reflections/2026-06-11_dealership_crud.md)
-- **Next priority**: Phase 3 feature 2 — **Skill** CRUD (`GET` all, `POST`, `DELETE`); reuse `ServiceResult<T>` and permission-policy pattern from Dealership
-- Remaining business endpoints: Skill, ServiceBay, ServiceType, Technician, TechnicianSkill, Customer, Vehicle, then appointment booking (Phase 4)
+- **Next priority**: Phase 3 feature 6 — **TechnicianSkill** assign/remove endpoints
+- Remaining business endpoints: TechnicianSkill, Customer, Vehicle, then appointment booking (Phase 4)
 
 ---
 

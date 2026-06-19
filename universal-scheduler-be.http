@@ -140,3 +140,75 @@ DELETE {{universal_scheduler_be_HostAddress}}/api/dealerships/{{dealershipId}}/s
 Authorization: Bearer {{token}}
 
 ###
+
+### List service bays for dealership (Admin only — requires servicebays:read)
+GET {{universal_scheduler_be_HostAddress}}/api/dealerships/{{dealershipId}}/service-bays
+Authorization: Bearer {{token}}
+
+###
+
+### Create service bay (Admin only — requires servicebays:write)
+POST {{universal_scheduler_be_HostAddress}}/api/dealerships/{{dealershipId}}/service-bays
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Bay 1"
+}
+
+###
+
+### Update service bay
+@serviceBayId = 00000000-0000-0000-0000-000000000000
+PUT {{universal_scheduler_be_HostAddress}}/api/dealerships/{{dealershipId}}/service-bays/{{serviceBayId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Bay 1 — Express Lane"
+}
+
+###
+
+### Deactivate service bay (soft delete)
+DELETE {{universal_scheduler_be_HostAddress}}/api/dealerships/{{dealershipId}}/service-bays/{{serviceBayId}}
+Authorization: Bearer {{token}}
+
+###
+
+### List technicians for dealership (Admin only — requires technicians:read)
+GET {{universal_scheduler_be_HostAddress}}/api/dealerships/{{dealershipId}}/technicians
+Authorization: Bearer {{token}}
+
+###
+
+### Create technician (Admin only — requires technicians:write)
+POST {{universal_scheduler_be_HostAddress}}/api/dealerships/{{dealershipId}}/technicians
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "firstName": "Alex",
+  "lastName": "Rivera"
+}
+
+###
+
+### Update technician
+@technicianId = 00000000-0000-0000-0000-000000000000
+PUT {{universal_scheduler_be_HostAddress}}/api/dealerships/{{dealershipId}}/technicians/{{technicianId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "firstName": "Alex",
+  "lastName": "Rivera-Smith"
+}
+
+###
+
+### Deactivate technician (soft delete)
+DELETE {{universal_scheduler_be_HostAddress}}/api/dealerships/{{dealershipId}}/technicians/{{technicianId}}
+Authorization: Bearer {{token}}
+
+###
