@@ -29,7 +29,7 @@ public class TechnicianService : ITechnicianService
             .Where(t => t.DealershipId == dealershipId)
             .OrderBy(t => t.LastName)
             .ThenBy(t => t.FirstName)
-            .Select(t => ToResponse(t))
+            .Select(t => ToResponseProjection(t))
             .ToListAsync(cancellationToken);
 
         return ServiceResult<IReadOnlyList<TechnicianResponse>>.Ok(technicians);
@@ -51,6 +51,13 @@ public class TechnicianService : ITechnicianService
             return ServiceResult<TechnicianResponse>.BadRequest(validationError);
         }
 
+        var skillIds = request.SkillIds ?? [];
+        var skillValidationError = await ValidateSkillIdsAsync(skillIds, cancellationToken);
+        if (skillValidationError is not null)
+        {
+            return ServiceResult<TechnicianResponse>.BadRequest(skillValidationError);
+        }
+
         var technician = new Technician
         {
             Id = Guid.NewGuid(),
@@ -61,9 +68,11 @@ public class TechnicianService : ITechnicianService
         };
 
         _db.Technicians.Add(technician);
+        await SyncSkillsAsync(technician.Id, skillIds, cancellationToken);
         await _db.SaveChangesAsync(cancellationToken);
 
-        return ServiceResult<TechnicianResponse>.Created(ToResponse(technician));
+        var response = await GetResponseAsync(technician.Id, cancellationToken);
+        return ServiceResult<TechnicianResponse>.Created(response);
     }
 
     public async Task<ServiceResult<TechnicianResponse>> UpdateAsync(
@@ -86,11 +95,23 @@ public class TechnicianService : ITechnicianService
             return ServiceResult<TechnicianResponse>.NotFound("Technician not found.");
         }
 
+        if (request.SkillIds is not null)
+        {
+            var skillValidationError = await ValidateSkillIdsAsync(request.SkillIds, cancellationToken);
+            if (skillValidationError is not null)
+            {
+                return ServiceResult<TechnicianResponse>.BadRequest(skillValidationError);
+            }
+
+            await SyncSkillsAsync(technician.Id, request.SkillIds, cancellationToken);
+        }
+
         technician.FirstName = request.FirstName.Trim();
         technician.LastName = request.LastName.Trim();
         await _db.SaveChangesAsync(cancellationToken);
 
-        return ServiceResult<TechnicianResponse>.Ok(ToResponse(technician));
+        var response = await GetResponseAsync(technician.Id, cancellationToken);
+        return ServiceResult<TechnicianResponse>.Ok(response);
     }
 
     public async Task<ServiceResult<object>> SoftDeleteAsync(
@@ -117,6 +138,70 @@ public class TechnicianService : ITechnicianService
         return ServiceResult<object>.NoContent();
     }
 
+    private async Task<string?> ValidateSkillIdsAsync(
+        IReadOnlyList<Guid> skillIds,
+        CancellationToken cancellationToken)
+    {
+        if (skillIds.Any(id => id == Guid.Empty))
+        {
+            return "Skill is required.";
+        }
+
+        if (skillIds.Distinct().Count() != skillIds.Count)
+        {
+            return "Duplicate skill IDs are not allowed.";
+        }
+
+        if (skillIds.Count == 0)
+        {
+            return null;
+        }
+
+        var existingCount = await _db.Skills
+            .CountAsync(s => skillIds.Contains(s.Id), cancellationToken);
+
+        if (existingCount != skillIds.Count)
+        {
+            return "Skill not found.";
+        }
+
+        return null;
+    }
+
+    private async Task SyncSkillsAsync(
+        Guid technicianId,
+        IReadOnlyList<Guid> skillIds,
+        CancellationToken cancellationToken)
+    {
+        var distinctIds = skillIds.Distinct().ToList();
+
+        var current = await _db.TechnicianSkills
+            .Where(ts => ts.TechnicianId == technicianId)
+            .ToListAsync(cancellationToken);
+
+        var toRemove = current.Where(ts => !distinctIds.Contains(ts.SkillId)).ToList();
+        var currentIds = current.Select(ts => ts.SkillId).ToHashSet();
+        var toAdd = distinctIds
+            .Where(skillId => !currentIds.Contains(skillId))
+            .Select(skillId => new TechnicianSkill
+            {
+                TechnicianId = technicianId,
+                SkillId = skillId
+            });
+
+        _db.TechnicianSkills.RemoveRange(toRemove);
+        _db.TechnicianSkills.AddRange(toAdd);
+    }
+
+    private async Task<TechnicianResponse> GetResponseAsync(
+        Guid technicianId,
+        CancellationToken cancellationToken) =>
+        await _db.Technicians
+            .AsNoTracking()
+            .Where(t => t.Id == technicianId)
+            .Select(t => ToResponseProjection(t))
+            .SingleAsync(cancellationToken);
+
     private static string? ValidateName(string firstName, string lastName)
     {
         if (string.IsNullOrWhiteSpace(firstName))
@@ -132,13 +217,21 @@ public class TechnicianService : ITechnicianService
         return null;
     }
 
-    private static TechnicianResponse ToResponse(Technician technician) =>
+    private static TechnicianResponse ToResponseProjection(Technician technician) =>
         new()
         {
             Id = technician.Id,
             DealershipId = technician.DealershipId,
             FirstName = technician.FirstName,
             LastName = technician.LastName,
-            IsActive = technician.IsActive
+            IsActive = technician.IsActive,
+            Skills = technician.TechnicianSkills
+                .OrderBy(ts => ts.Skill.Name)
+                .Select(ts => new TechnicianSkillSummary
+                {
+                    Id = ts.SkillId,
+                    Name = ts.Skill.Name
+                })
+                .ToList()
         };
 }

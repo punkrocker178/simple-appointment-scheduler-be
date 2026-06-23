@@ -20,6 +20,10 @@ public static class AuthSeedData
         public static readonly Guid ServiceBaysWrite = Guid.Parse("a1000001-0000-4000-8000-00000000000c");
         public static readonly Guid TechniciansRead = Guid.Parse("a1000001-0000-4000-8000-00000000000d");
         public static readonly Guid TechniciansWrite = Guid.Parse("a1000001-0000-4000-8000-00000000000e");
+        public static readonly Guid CustomersRead = Guid.Parse("a1000001-0000-4000-8000-00000000000f");
+        public static readonly Guid CustomersWrite = Guid.Parse("a1000001-0000-4000-8000-000000000010");
+        public static readonly Guid VehiclesRead = Guid.Parse("a1000001-0000-4000-8000-000000000011");
+        public static readonly Guid VehiclesWrite = Guid.Parse("a1000001-0000-4000-8000-000000000012");
     }
 
     public static class RoleIds
@@ -114,6 +118,30 @@ public static class AuthSeedData
             Id = PermissionIds.TechniciansWrite,
             Name = "technicians:write",
             Description = "Create, update, and deactivate technicians (admin only)"
+        },
+        new Permission
+        {
+            Id = PermissionIds.CustomersRead,
+            Name = "customers:read",
+            Description = "View customers (admin and staff)"
+        },
+        new Permission
+        {
+            Id = PermissionIds.CustomersWrite,
+            Name = "customers:write",
+            Description = "Create and update customers (admin and staff)"
+        },
+        new Permission
+        {
+            Id = PermissionIds.VehiclesRead,
+            Name = "vehicles:read",
+            Description = "View vehicles (admin and staff)"
+        },
+        new Permission
+        {
+            Id = PermissionIds.VehiclesWrite,
+            Name = "vehicles:write",
+            Description = "Create, update, and delete vehicles (admin and staff)"
         }
     ];
 
@@ -155,6 +183,14 @@ public static class AuthSeedData
         new RolePermission { RoleId = RoleIds.Admin, PermissionId = PermissionIds.ServiceBaysWrite },
         new RolePermission { RoleId = RoleIds.Admin, PermissionId = PermissionIds.TechniciansRead },
         new RolePermission { RoleId = RoleIds.Admin, PermissionId = PermissionIds.TechniciansWrite },
+        new RolePermission { RoleId = RoleIds.Admin, PermissionId = PermissionIds.CustomersRead },
+        new RolePermission { RoleId = RoleIds.Admin, PermissionId = PermissionIds.CustomersWrite },
+        new RolePermission { RoleId = RoleIds.Admin, PermissionId = PermissionIds.VehiclesRead },
+        new RolePermission { RoleId = RoleIds.Admin, PermissionId = PermissionIds.VehiclesWrite },
+        new RolePermission { RoleId = RoleIds.Staff, PermissionId = PermissionIds.CustomersRead },
+        new RolePermission { RoleId = RoleIds.Staff, PermissionId = PermissionIds.CustomersWrite },
+        new RolePermission { RoleId = RoleIds.Staff, PermissionId = PermissionIds.VehiclesRead },
+        new RolePermission { RoleId = RoleIds.Staff, PermissionId = PermissionIds.VehiclesWrite },
         new RolePermission { RoleId = RoleIds.Staff, PermissionId = PermissionIds.AppointmentsRead },
         new RolePermission { RoleId = RoleIds.Staff, PermissionId = PermissionIds.AppointmentsWrite },
         new RolePermission { RoleId = RoleIds.User, PermissionId = PermissionIds.AppointmentsReadOwn },

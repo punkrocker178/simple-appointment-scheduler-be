@@ -10,6 +10,8 @@ namespace universal_scheduler_be.Tests.Services;
 public class TechnicianServiceTests
 {
     private readonly Guid _dealershipId = Guid.Parse("c3000001-0000-4000-8000-000000000001");
+    private readonly Guid _skillId = Guid.Parse("d4000001-0000-4000-8000-000000000001");
+    private readonly Guid _otherSkillId = Guid.Parse("d4000002-0000-4000-8000-000000000002");
 
     [Fact]
     public async Task GetByDealershipAsync_ReturnsTechniciansOrderedByLastNameThenFirstName()
@@ -185,6 +187,187 @@ public class TechnicianServiceTests
         Assert.Equal("Technician is already inactive.", result.Error);
     }
 
+    [Fact]
+    public async Task CreateAsync_WithValidSkillIds_PersistsAssignmentsAndReturnsSkills()
+    {
+        await using var context = AuthTestData.CreateContext();
+        SeedDealership(context);
+        SeedSkills(context);
+        var service = new TechnicianService(context);
+
+        var result = await service.CreateAsync(_dealershipId, new CreateTechnicianRequest
+        {
+            FirstName = "Alex",
+            LastName = "Rivera",
+            SkillIds = [_skillId]
+        });
+
+        Assert.Equal(StatusCodes.Status201Created, result.StatusCode);
+        Assert.NotNull(result.Data);
+        Assert.Single(result.Data.Skills);
+        Assert.Equal(_skillId, result.Data.Skills[0].Id);
+        Assert.Equal("Oil Change", result.Data.Skills[0].Name);
+        Assert.True(context.TechnicianSkills.Any(ts => ts.SkillId == _skillId));
+    }
+
+    [Fact]
+    public async Task CreateAsync_UnknownSkillId_ReturnsBadRequest()
+    {
+        await using var context = AuthTestData.CreateContext();
+        SeedDealership(context);
+        var service = new TechnicianService(context);
+
+        var result = await service.CreateAsync(_dealershipId, new CreateTechnicianRequest
+        {
+            FirstName = "Alex",
+            LastName = "Rivera",
+            SkillIds = [Guid.NewGuid()]
+        });
+
+        Assert.Equal(StatusCodes.Status400BadRequest, result.StatusCode);
+        Assert.Equal("Skill not found.", result.Error);
+    }
+
+    [Fact]
+    public async Task CreateAsync_DuplicateSkillIds_ReturnsBadRequest()
+    {
+        await using var context = AuthTestData.CreateContext();
+        SeedDealership(context);
+        SeedSkills(context);
+        var service = new TechnicianService(context);
+
+        var result = await service.CreateAsync(_dealershipId, new CreateTechnicianRequest
+        {
+            FirstName = "Alex",
+            LastName = "Rivera",
+            SkillIds = [_skillId, _skillId]
+        });
+
+        Assert.Equal(StatusCodes.Status400BadRequest, result.StatusCode);
+        Assert.Equal("Duplicate skill IDs are not allowed.", result.Error);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_WithSkillIds_ReplacesAssignments()
+    {
+        await using var context = AuthTestData.CreateContext();
+        SeedDealership(context);
+        SeedSkills(context);
+        var technician = CreateTechnician("Alex", "Rivera");
+        context.Technicians.Add(technician);
+        context.TechnicianSkills.Add(new TechnicianSkill
+        {
+            TechnicianId = technician.Id,
+            SkillId = _skillId
+        });
+        await context.SaveChangesAsync();
+
+        var service = new TechnicianService(context);
+
+        var result = await service.UpdateAsync(_dealershipId, technician.Id, new UpdateTechnicianRequest
+        {
+            FirstName = "Alex",
+            LastName = "Rivera",
+            SkillIds = [_otherSkillId]
+        });
+
+        Assert.Equal(StatusCodes.Status200OK, result.StatusCode);
+        Assert.NotNull(result.Data);
+        Assert.Single(result.Data.Skills);
+        Assert.Equal(_otherSkillId, result.Data.Skills[0].Id);
+        Assert.False(context.TechnicianSkills.Any(ts =>
+            ts.TechnicianId == technician.Id && ts.SkillId == _skillId));
+        Assert.True(context.TechnicianSkills.Any(ts =>
+            ts.TechnicianId == technician.Id && ts.SkillId == _otherSkillId));
+    }
+
+    [Fact]
+    public async Task UpdateAsync_WithEmptySkillIds_ClearsAssignments()
+    {
+        await using var context = AuthTestData.CreateContext();
+        SeedDealership(context);
+        SeedSkills(context);
+        var technician = CreateTechnician("Alex", "Rivera");
+        context.Technicians.Add(technician);
+        context.TechnicianSkills.Add(new TechnicianSkill
+        {
+            TechnicianId = technician.Id,
+            SkillId = _skillId
+        });
+        await context.SaveChangesAsync();
+
+        var service = new TechnicianService(context);
+
+        var result = await service.UpdateAsync(_dealershipId, technician.Id, new UpdateTechnicianRequest
+        {
+            FirstName = "Alex",
+            LastName = "Rivera",
+            SkillIds = []
+        });
+
+        Assert.Equal(StatusCodes.Status200OK, result.StatusCode);
+        Assert.NotNull(result.Data);
+        Assert.Empty(result.Data.Skills);
+        Assert.False(context.TechnicianSkills.Any(ts => ts.TechnicianId == technician.Id));
+    }
+
+    [Fact]
+    public async Task UpdateAsync_WithoutSkillIds_LeavesAssignmentsUnchanged()
+    {
+        await using var context = AuthTestData.CreateContext();
+        SeedDealership(context);
+        SeedSkills(context);
+        var technician = CreateTechnician("Alex", "Rivera");
+        context.Technicians.Add(technician);
+        context.TechnicianSkills.Add(new TechnicianSkill
+        {
+            TechnicianId = technician.Id,
+            SkillId = _skillId
+        });
+        await context.SaveChangesAsync();
+
+        var service = new TechnicianService(context);
+
+        var result = await service.UpdateAsync(_dealershipId, technician.Id, new UpdateTechnicianRequest
+        {
+            FirstName = "Alex",
+            LastName = "Rivera-Smith"
+        });
+
+        Assert.Equal(StatusCodes.Status200OK, result.StatusCode);
+        Assert.NotNull(result.Data);
+        Assert.Single(result.Data.Skills);
+        Assert.Equal(_skillId, result.Data.Skills[0].Id);
+        Assert.True(context.TechnicianSkills.Any(ts =>
+            ts.TechnicianId == technician.Id && ts.SkillId == _skillId));
+    }
+
+    [Fact]
+    public async Task GetByDealershipAsync_ReturnsAssignedSkills()
+    {
+        await using var context = AuthTestData.CreateContext();
+        SeedDealership(context);
+        SeedSkills(context);
+        var technician = CreateTechnician("Alex", "Rivera");
+        context.Technicians.Add(technician);
+        context.TechnicianSkills.Add(new TechnicianSkill
+        {
+            TechnicianId = technician.Id,
+            SkillId = _skillId
+        });
+        await context.SaveChangesAsync();
+
+        var service = new TechnicianService(context);
+
+        var result = await service.GetByDealershipAsync(_dealershipId);
+
+        Assert.Equal(StatusCodes.Status200OK, result.StatusCode);
+        Assert.NotNull(result.Data);
+        var returned = Assert.Single(result.Data);
+        Assert.Single(returned.Skills);
+        Assert.Equal("Oil Change", returned.Skills[0].Name);
+    }
+
     private void SeedDealership(ApplicationDbContext context)
     {
         context.Dealerships.Add(new Dealership
@@ -195,6 +378,24 @@ public class TechnicianServiceTests
             Phone = "+1-512-555-0100",
             Timezone = "America/Chicago"
         });
+        context.SaveChanges();
+    }
+
+    private void SeedSkills(ApplicationDbContext context)
+    {
+        context.Skills.AddRange(
+            new Skill
+            {
+                Id = _skillId,
+                Name = "Oil Change",
+                Description = "Standard oil change"
+            },
+            new Skill
+            {
+                Id = _otherSkillId,
+                Name = "Brake Service",
+                Description = "Brake inspection and repair"
+            });
         context.SaveChanges();
     }
 

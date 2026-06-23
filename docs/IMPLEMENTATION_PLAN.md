@@ -1,7 +1,7 @@
 # Implementation Plan & Progress Tracker
 
-**Last updated:** 2026-06-18  
-**Current phase:** Phase 3 — Core CRUD (in progress; Dealership, Skill, ServiceType, ServiceBay, Technician complete)
+**Last updated:** 2026-06-19  
+**Current phase:** Phase 3 — Core CRUD (complete); Phase 4 — Appointment Booking next
 
 Use this document to track what is done, in progress, and pending. Update checkboxes and the phase summary when tasks land.
 
@@ -22,7 +22,7 @@ Use this document to track what is done, in progress, and pending. Update checkb
 |-------|------|--------|-------|
 | 1 | Infrastructure Setup | ✅ Complete | EF Core + PostgreSQL + migrations |
 | 2 | Authentication | ✅ Complete | JWT, User, register/login; `[Authorize]` on `/api/auth/me` only until Phase 3 |
-| 3 | Core CRUD Endpoints | 🔶 In progress | Dealership, Skill, ServiceType, ServiceBay, Technician done; 3 features remaining |
+| 3 | Core CRUD Endpoints | ✅ Complete | All 8 features done |
 | 4 | Appointment Booking | ⬜ Not started | `Appointments` table exists; no API or scheduling logic |
 | 5 | Appointment Lifecycle | ⬜ Not started | `AppointmentStatus` enum in code only |
 | 6 | Validation & Error Handling | ⬜ Not started | Manual validation in auth only |
@@ -64,7 +64,7 @@ Use this document to track what is done, in progress, and pending. Update checkb
 
 ---
 
-## Phase 3 — Core CRUD Endpoints 🔶
+## Phase 3 — Core CRUD Endpoints ✅
 
 Build in this order — each feature should be shippable on its own.
 
@@ -75,18 +75,18 @@ Build in this order — each feature should be shippable on its own.
 | 3 | **ServiceBay** | GET by dealership, POST, PUT, soft delete | ✅ |
 | 4 | **ServiceType** | GET by dealership, POST, PUT, soft delete | ✅ |
 | 5 | **Technician** | GET by dealership, POST, PUT, soft delete | ✅ |
-| 6 | **TechnicianSkill** | POST (assign), DELETE (remove) | ⬜ |
-| 7 | **Customer** | GET, POST, PUT | ⬜ |
-| 8 | **Vehicle** | GET by customer, POST, PUT, DELETE | ⬜ |
+| 6 | **Technician skills** | Optional `skillIds` on technician POST/PUT (replace on update) | ✅ |
+| 7 | **Customer** | GET, POST, PUT | ✅ |
+| 8 | **Vehicle** | GET by customer, POST, PUT, DELETE | ✅ |
 
 **Groundwork already in place:** entity classes under `Infrastructure/Entities/`, tables in `InitialCreate` migration, EF configurations for some join tables.
 
 **Suggested per-feature checklist:**
 
-- [ ] Request/response DTOs
-- [ ] Service interface + implementation
-- [ ] Controller with `[Authorize]` + permission policy where appropriate
-- [ ] Manual smoke test via `universal-scheduler-be.http`
+- [x] Request/response DTOs
+- [x] Service interface + implementation
+- [x] Controller with `[Authorize]` + permission policy where appropriate
+- [x] Manual smoke test via `universal-scheduler-be.http`
 
 ---
 
@@ -159,11 +159,9 @@ Most important phase — implement carefully after Phase 3 CRUD is stable.
 
 ## Recommended next session
 
-1. **Phase 3, feature 6** — **TechnicianSkill** assign/remove endpoints.
-2. Reuse `ServiceResult<T>`, `[Authorize]` + permission policies pattern from Dealership.
-3. Keep `universal-scheduler-be.http` updated for manual testing.
-
-After Phase 3 entities exist via API, Phase 4 availability/booking can use real data instead of seed-only DB rows.
+1. **Phase 4** — **Appointment Booking** (availability, `POST /appointments`, list endpoints).
+2. Align `Appointment` entity with DB (`VehicleId`, `Status` column) before booking API.
+3. Re-login after `AddCustomerAndVehiclePermissions` migration if testing customer/vehicle endpoints.
 
 ---
 
