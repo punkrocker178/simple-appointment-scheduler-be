@@ -247,7 +247,7 @@ Non-secret defaults live in `appsettings.json` (`Jwt:Issuer`, `Jwt:Audience`, `A
 - `Appointment` links multiple entities for scheduling
 
 ### Current State
-- **Progress tracker**: [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md) — Phases 1–2 complete; Phase 3 in progress (Dealership, Skill, ServiceType, ServiceBay, Technician done; 3 features remaining)
+- **Progress tracker**: [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md) — Phases 1–3 complete; Phase 4 (Appointment Booking) next
 - Database schema established with migrations
 - Entity Framework configured with PostgreSQL
 - Authentication entities (User/Role/Permission) migrated with role/permission seed data
@@ -256,13 +256,14 @@ Non-secret defaults live in `appsettings.json` (`Jwt:Issuer`, `Jwt:Audience`, `A
 - **Skill CRUD** implemented — `GET/POST/DELETE /api/skills` with `skills:read` / `skills:write` policies
 - **ServiceType CRUD** implemented — nested under `/api/dealerships/{id}/service-types` with `servicetypes:read` / `servicetypes:write`
 - **ServiceBay CRUD** implemented — nested under `/api/dealerships/{id}/service-bays` with `servicebays:read` / `servicebays:write`
-- **Technician CRUD** implemented — nested under `/api/dealerships/{id}/technicians` with `technicians:read` / `technicians:write`
-- Unit test project with **89 tests** (`universal-scheduler-be.Tests`)
+- **Technician CRUD** implemented — nested under `/api/dealerships/{id}/technicians` with `technicians:read` / `technicians:write`; skills assigned via optional `skillIds` on create/update
+- **Customer CRUD** implemented — `GET/POST/PUT /api/customers` with `customers:read` / `customers:write` (Admin + Staff)
+- **Vehicle CRUD** implemented — nested under `/api/customers/{id}/vehicles` with `vehicles:read` / `vehicles:write` (Admin + Staff)
+- Unit test project with **110 tests** (`universal-scheduler-be.Tests`)
 - VS Code debug config for .NET 10 (`.vscode/launch.json`)
 - Cursor rule `.cursor/rules/agents-md.mdc` points agents to this file each session
 - Session notes: [reflections/2026-06-11_dealership_crud.md](reflections/2026-06-11_dealership_crud.md)
-- **Next priority**: Phase 3 feature 6 — **TechnicianSkill** assign/remove endpoints
-- Remaining business endpoints: TechnicianSkill, Customer, Vehicle, then appointment booking (Phase 4)
+- **Next priority**: Phase 4 — **Appointment Booking** (availability, create, list endpoints)
 
 ---
 

@@ -183,32 +183,116 @@ Authorization: Bearer {{token}}
 ###
 
 ### Create technician (Admin only — requires technicians:write)
+@skillId = 00000000-0000-0000-0000-000000000000
 POST {{universal_scheduler_be_HostAddress}}/api/dealerships/{{dealershipId}}/technicians
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
   "firstName": "Alex",
-  "lastName": "Rivera"
+  "lastName": "Rivera",
+  "skillIds": ["{{skillId}}"]
 }
 
 ###
 
 ### Update technician
 @technicianId = 00000000-0000-0000-0000-000000000000
+@skillId = 00000000-0000-0000-0000-000000000000
 PUT {{universal_scheduler_be_HostAddress}}/api/dealerships/{{dealershipId}}/technicians/{{technicianId}}
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
   "firstName": "Alex",
-  "lastName": "Rivera-Smith"
+  "lastName": "Rivera-Smith",
+  "skillIds": ["{{skillId}}"]
 }
 
 ###
 
 ### Deactivate technician (soft delete)
 DELETE {{universal_scheduler_be_HostAddress}}/api/dealerships/{{dealershipId}}/technicians/{{technicianId}}
+Authorization: Bearer {{token}}
+
+###
+
+### List customers (Admin/Staff — requires customers:read)
+GET {{universal_scheduler_be_HostAddress}}/api/customers
+Authorization: Bearer {{token}}
+
+###
+
+### Get customer by id
+@customerId = 00000000-0000-0000-0000-000000000000
+GET {{universal_scheduler_be_HostAddress}}/api/customers/{{customerId}}
+Authorization: Bearer {{token}}
+
+###
+
+### Create customer (Admin/Staff — requires customers:write)
+POST {{universal_scheduler_be_HostAddress}}/api/customers
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "firstName": "Jane",
+  "lastName": "Doe",
+  "email": "jane.doe@example.com",
+  "phone": "+1-512-555-0200"
+}
+
+###
+
+### Update customer
+PUT {{universal_scheduler_be_HostAddress}}/api/customers/{{customerId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "firstName": "Jane",
+  "lastName": "Doe-Smith",
+  "email": "jane.doe@example.com",
+  "phone": "+1-512-555-0201"
+}
+
+###
+
+### List vehicles for customer (Admin/Staff — requires vehicles:read)
+GET {{universal_scheduler_be_HostAddress}}/api/customers/{{customerId}}/vehicles
+Authorization: Bearer {{token}}
+
+###
+
+### Create vehicle (Admin/Staff — requires vehicles:write)
+POST {{universal_scheduler_be_HostAddress}}/api/customers/{{customerId}}/vehicles
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "make": "Toyota",
+  "model": "Camry",
+  "year": 2022
+}
+
+###
+
+### Update vehicle
+@vehicleId = 00000000-0000-0000-0000-000000000000
+PUT {{universal_scheduler_be_HostAddress}}/api/customers/{{customerId}}/vehicles/{{vehicleId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "make": "Toyota",
+  "model": "Camry SE",
+  "year": 2022
+}
+
+###
+
+### Delete vehicle
+DELETE {{universal_scheduler_be_HostAddress}}/api/customers/{{customerId}}/vehicles/{{vehicleId}}
 Authorization: Bearer {{token}}
 
 ###
