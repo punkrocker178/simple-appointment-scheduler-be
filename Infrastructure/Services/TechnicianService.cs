@@ -26,13 +26,15 @@ public class TechnicianService : ITechnicianService
 
         var technicians = await _db.Technicians
             .AsNoTracking()
+            .Include(t => t.TechnicianSkills)
+            .ThenInclude(ts => ts.Skill)
             .Where(t => t.DealershipId == dealershipId)
             .OrderBy(t => t.LastName)
             .ThenBy(t => t.FirstName)
-            .Select(t => ToResponseProjection(t))
             .ToListAsync(cancellationToken);
 
-        return ServiceResult<IReadOnlyList<TechnicianResponse>>.Ok(technicians);
+        return ServiceResult<IReadOnlyList<TechnicianResponse>>.Ok(
+            technicians.Select(ToResponseProjection).ToList());
     }
 
     public async Task<ServiceResult<TechnicianResponse>> CreateAsync(
@@ -195,12 +197,16 @@ public class TechnicianService : ITechnicianService
 
     private async Task<TechnicianResponse> GetResponseAsync(
         Guid technicianId,
-        CancellationToken cancellationToken) =>
-        await _db.Technicians
+        CancellationToken cancellationToken)
+    {
+        var technician = await _db.Technicians
             .AsNoTracking()
-            .Where(t => t.Id == technicianId)
-            .Select(t => ToResponseProjection(t))
-            .SingleAsync(cancellationToken);
+            .Include(t => t.TechnicianSkills)
+            .ThenInclude(ts => ts.Skill)
+            .SingleAsync(t => t.Id == technicianId, cancellationToken);
+
+        return ToResponseProjection(technician);
+    }
 
     private static string? ValidateName(string firstName, string lastName)
     {

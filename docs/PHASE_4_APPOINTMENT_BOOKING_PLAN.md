@@ -1,7 +1,7 @@
 # Phase 4 — Appointment Booking Plan
 
-**Status:** Approved design (pending implementation)  
-**Last updated:** 2026-06-17  
+**Status:** Implemented  
+**Last updated:** 2026-07-01  
 **Related:** [IMPLEMENTATION_PLAN.md](./IMPLEMENTATION_PLAN.md), [relationship-map.md](./relationship-map.md), [AGENTS.md](../AGENTS.md)
 
 ---

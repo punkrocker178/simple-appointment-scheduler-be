@@ -259,11 +259,12 @@ Non-secret defaults live in `appsettings.json` (`Jwt:Issuer`, `Jwt:Audience`, `A
 - **Technician CRUD** implemented — nested under `/api/dealerships/{id}/technicians` with `technicians:read` / `technicians:write`; skills assigned via optional `skillIds` on create/update
 - **Customer CRUD** implemented — `GET/POST/PUT /api/customers` with `customers:read` / `customers:write` (Admin + Staff)
 - **Vehicle CRUD** implemented — nested under `/api/customers/{id}/vehicles` with `vehicles:read` / `vehicles:write` (Admin + Staff)
-- Unit test project with **110 tests** (`universal-scheduler-be.Tests`)
+- **Appointment Booking (Phase 4)** — `GET /api/availability`, `POST /api/appointments`, `GET /api/appointments/{id}`, `GET /api/customers/{id}/appointments`, `GET /api/dealerships/{id}/appointments?date=` (`AvailabilityEngine`, `AvailabilityService`, `AppointmentService`)
+- Unit test project with **132 tests** (`universal-scheduler-be.Tests`)
 - VS Code debug config for .NET 10 (`.vscode/launch.json`)
 - Cursor rule `.cursor/rules/agents-md.mdc` points agents to this file each session
 - Session notes: [reflections/2026-06-11_dealership_crud.md](reflections/2026-06-11_dealership_crud.md)
-- **Next priority**: Phase 4 — **Appointment Booking** (availability, create, list endpoints)
+- **Next priority**: Phase 5 — **Appointment Lifecycle** (status transitions, cancel)
 
 ---
 
