@@ -1,0 +1,52 @@
+services:
+  postgres:
+    image: postgres:17.10-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: TestPassword
+      POSTGRES_DB: universal_scheduler
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d universal_scheduler"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=universal_scheduler;Username=postgres;Password=TestPassword
+      Jwt__Key: ${JWT_KEY:-dev-docker-jwt-secret-key-min-32-chars!!}
+      AdminSeed__Email: ${ADMIN_EMAIL:-admin@example.com}
+      AdminSeed__Password: ${ADMIN_PASSWORD:-AdminPassword123!}
+    ports:
+      - "52100:8080"
+
+  frontend:
+    build:
+      context: ../simple-appointment-scheduler
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      HOST: 0.0.0.0
+      PORT: 3000
+    ports:
+      - "3000:3000"
+
+volumes:
+  postgres_data:

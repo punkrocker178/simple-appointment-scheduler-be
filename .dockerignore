@@ -1,0 +1,9 @@
+bin/
+obj/
+.git/
+.vscode/
+.cursor/
+universal-scheduler-be.Tests/
+reflections/
+*.md
+*.http
