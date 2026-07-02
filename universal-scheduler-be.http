@@ -54,7 +54,9 @@ Content-Type: application/json
   "name": "Downtown Auto",
   "address": "123 Main St, Austin, TX 78701",
   "phone": "+1-512-555-0100",
-  "timezone": "America/Chicago"
+  "timezone": "America/Chicago",
+  "openSecondsFromMidnight": 28800,
+  "closeSecondsFromMidnight": 61200
 }
 
 ###
@@ -68,7 +70,9 @@ Content-Type: application/json
   "name": "Downtown Auto — Updated",
   "address": "456 Congress Ave, Austin, TX 78701",
   "phone": "+1-512-555-0199",
-  "timezone": "America/Chicago"
+  "timezone": "America/Chicago",
+  "openSecondsFromMidnight": 28800,
+  "closeSecondsFromMidnight": 61200
 }
 
 ###
@@ -293,6 +297,47 @@ Content-Type: application/json
 
 ### Delete vehicle
 DELETE {{universal_scheduler_be_HostAddress}}/api/customers/{{customerId}}/vehicles/{{vehicleId}}
+Authorization: Bearer {{token}}
+
+###
+
+### Check availability (any authenticated user)
+GET {{universal_scheduler_be_HostAddress}}/api/availability?dealershipId={{dealershipId}}&serviceTypeId={{serviceTypeId}}&date=2026-06-17
+Authorization: Bearer {{token}}
+
+###
+
+### Book appointment (requires appointments:write)
+@serviceTypeId = 00000000-0000-0000-0000-000000000000
+POST {{universal_scheduler_be_HostAddress}}/api/appointments
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "customerId": "{{customerId}}",
+  "vehicleId": "{{vehicleId}}",
+  "serviceTypeId": "{{serviceTypeId}}",
+  "bookingDate": "2026-06-17",
+  "secondsFromMidnight": 28800
+}
+
+###
+
+### Get appointment by id (requires appointments:read)
+@appointmentId = 00000000-0000-0000-0000-000000000000
+GET {{universal_scheduler_be_HostAddress}}/api/appointments/{{appointmentId}}
+Authorization: Bearer {{token}}
+
+###
+
+### List customer appointments (requires appointments:read)
+GET {{universal_scheduler_be_HostAddress}}/api/customers/{{customerId}}/appointments
+Authorization: Bearer {{token}}
+
+###
+
+### Daily dealership schedule (requires appointments:read)
+GET {{universal_scheduler_be_HostAddress}}/api/dealerships/{{dealershipId}}/appointments?date=2026-06-17
 Authorization: Bearer {{token}}
 
 ###

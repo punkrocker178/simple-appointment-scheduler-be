@@ -1,3 +1,4 @@
+using Infrastructure.Appointments;
 using Infrastructure.Common;
 using Infrastructure.Data;
 using Infrastructure.Dealerships.Dtos;
@@ -47,7 +48,13 @@ public class DealershipService : IDealershipService
         CreateDealershipRequest request,
         CancellationToken cancellationToken = default)
     {
-        var validationError = ValidateRequest(request.Name, request.Address, request.Phone, request.Timezone);
+        var validationError = ValidateRequest(
+            request.Name,
+            request.Address,
+            request.Phone,
+            request.Timezone,
+            request.OpenSecondsFromMidnight,
+            request.CloseSecondsFromMidnight);
         if (validationError is not null)
         {
             return ServiceResult<DealershipResponse>.BadRequest(validationError);
@@ -59,7 +66,9 @@ public class DealershipService : IDealershipService
             Name = request.Name.Trim(),
             Address = request.Address.Trim(),
             Phone = request.Phone.Trim(),
-            Timezone = request.Timezone.Trim()
+            Timezone = request.Timezone.Trim(),
+            OpenSecondsFromMidnight = request.OpenSecondsFromMidnight,
+            CloseSecondsFromMidnight = request.CloseSecondsFromMidnight
         };
 
         _db.Dealerships.Add(dealership);
@@ -73,7 +82,13 @@ public class DealershipService : IDealershipService
         UpdateDealershipRequest request,
         CancellationToken cancellationToken = default)
     {
-        var validationError = ValidateRequest(request.Name, request.Address, request.Phone, request.Timezone);
+        var validationError = ValidateRequest(
+            request.Name,
+            request.Address,
+            request.Phone,
+            request.Timezone,
+            request.OpenSecondsFromMidnight,
+            request.CloseSecondsFromMidnight);
         if (validationError is not null)
         {
             return ServiceResult<DealershipResponse>.BadRequest(validationError);
@@ -89,13 +104,21 @@ public class DealershipService : IDealershipService
         dealership.Address = request.Address.Trim();
         dealership.Phone = request.Phone.Trim();
         dealership.Timezone = request.Timezone.Trim();
+        dealership.OpenSecondsFromMidnight = request.OpenSecondsFromMidnight;
+        dealership.CloseSecondsFromMidnight = request.CloseSecondsFromMidnight;
 
         await _db.SaveChangesAsync(cancellationToken);
 
         return ServiceResult<DealershipResponse>.Ok(ToResponse(dealership));
     }
 
-    private static string? ValidateRequest(string name, string address, string phone, string timezone)
+    private static string? ValidateRequest(
+        string name,
+        string address,
+        string phone,
+        string timezone,
+        int openSeconds,
+        int closeSeconds)
     {
         if (string.IsNullOrWhiteSpace(name))
         {
@@ -117,7 +140,7 @@ public class DealershipService : IDealershipService
             return "Timezone is required.";
         }
 
-        return null;
+        return AvailabilityEngine.ValidateBusinessHours(openSeconds, closeSeconds);
     }
 
     private static DealershipResponse ToResponse(Dealership dealership) =>
@@ -127,6 +150,8 @@ public class DealershipService : IDealershipService
             Name = dealership.Name,
             Address = dealership.Address,
             Phone = dealership.Phone,
-            Timezone = dealership.Timezone
+            Timezone = dealership.Timezone,
+            OpenSecondsFromMidnight = dealership.OpenSecondsFromMidnight,
+            CloseSecondsFromMidnight = dealership.CloseSecondsFromMidnight
         };
 }
