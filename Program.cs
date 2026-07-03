@@ -69,6 +69,7 @@ using (var scope = app.Services.CreateScope())
 
     await db.Database.MigrateAsync();
     await AdminUserSeeder.SeedAsync(db, passwordHasher, configuration, logger);
+    await DomainSeeder.SeedAsync(db, logger);
 }
 
 if (app.Environment.IsDevelopment())
