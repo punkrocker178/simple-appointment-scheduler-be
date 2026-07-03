@@ -16,7 +16,9 @@ public class DealershipControllerTests
         Name = "Downtown Auto",
         Address = "123 Main St",
         Phone = "+1-512-555-0100",
-        Timezone = "America/Chicago"
+        Timezone = "America/Chicago",
+        OpenSecondsFromMidnight = 28_800,
+        CloseSecondsFromMidnight = 61_200
     };
 
     [Fact]

@@ -81,7 +81,9 @@ public class DealershipServiceTests
             Name = "  Downtown Auto  ",
             Address = "123 Main St",
             Phone = "+1-512-555-0100",
-            Timezone = "America/Chicago"
+            Timezone = "America/Chicago",
+            OpenSecondsFromMidnight = 28_800,
+            CloseSecondsFromMidnight = 61_200
         });
 
         Assert.Equal(StatusCodes.Status201Created, result.StatusCode);
@@ -138,7 +140,9 @@ public class DealershipServiceTests
             Name = "  New Name  ",
             Address = "456 Congress Ave",
             Phone = "+1-512-555-0199",
-            Timezone = "America/Chicago"
+            Timezone = "America/Chicago",
+            OpenSecondsFromMidnight = 28_800,
+            CloseSecondsFromMidnight = 61_200
         });
 
         Assert.Equal(StatusCodes.Status200OK, result.StatusCode);
@@ -162,7 +166,9 @@ public class DealershipServiceTests
             Name = "New Name",
             Address = "456 Congress Ave",
             Phone = "+1-512-555-0199",
-            Timezone = "America/Chicago"
+            Timezone = "America/Chicago",
+            OpenSecondsFromMidnight = 28_800,
+            CloseSecondsFromMidnight = 61_200
         });
 
         Assert.Equal(StatusCodes.Status404NotFound, result.StatusCode);
@@ -209,6 +215,8 @@ public class DealershipServiceTests
             Name = name,
             Address = "123 Main St",
             Phone = "+1-512-555-0100",
-            Timezone = "America/Chicago"
+            Timezone = "America/Chicago",
+            OpenSecondsFromMidnight = 28_800,
+            CloseSecondsFromMidnight = 61_200
         };
 }

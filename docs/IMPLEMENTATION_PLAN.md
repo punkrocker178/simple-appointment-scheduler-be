@@ -1,7 +1,7 @@
 # Implementation Plan & Progress Tracker
 
-**Last updated:** 2026-06-19  
-**Current phase:** Phase 3 — Core CRUD (complete); Phase 4 — Appointment Booking next
+**Last updated:** 2026-07-01  
+**Current phase:** Phase 4 — Appointment Booking (complete); Phase 5 — Appointment Lifecycle next
 
 Use this document to track what is done, in progress, and pending. Update checkboxes and the phase summary when tasks land.
 
@@ -23,10 +23,10 @@ Use this document to track what is done, in progress, and pending. Update checkb
 | 1 | Infrastructure Setup | ✅ Complete | EF Core + PostgreSQL + migrations |
 | 2 | Authentication | ✅ Complete | JWT, User, register/login; `[Authorize]` on `/api/auth/me` only until Phase 3 |
 | 3 | Core CRUD Endpoints | ✅ Complete | All 8 features done |
-| 4 | Appointment Booking | ⬜ Not started | `Appointments` table exists; no API or scheduling logic |
-| 5 | Appointment Lifecycle | ⬜ Not started | `AppointmentStatus` enum in code only |
+| 4 | Appointment Booking | ✅ Complete | Availability, create, list endpoints; `Phase4AppointmentBooking` migration |
+| 5 | Appointment Lifecycle | ⬜ Not started | `AppointmentStatus` enum in code; no PATCH/cancel API yet |
 | 6 | Validation & Error Handling | ⬜ Not started | Manual validation in auth only |
-| 7 | Testing | 🔶 Partial | 18 auth unit tests; no integration tests |
+| 7 | Testing | 🔶 Partial | 132 unit tests; availability engine + appointment service tests |
 | 8 | API Documentation | 🔶 Partial | `MapOpenApi()` in dev; no Swashbuckle / JWT UI |
 
 ---
@@ -90,22 +90,24 @@ Build in this order — each feature should be shippable on its own.
 
 ---
 
-## Phase 4 — Appointment Booking ⬜
-
-Most important phase — implement carefully after Phase 3 CRUD is stable.
+## Phase 4 — Appointment Booking ✅
 
 | Task | Status |
 |------|--------|
-| `GET /availability?dealershipId=&serviceTypeId=&date=` — qualified technicians, slot generation, conflict subtraction | ⬜ |
-| `POST /appointments` — validate skill, technician + bay conflict check, `EndAt = StartAt + DurationMinutes`, transaction | ⬜ |
-| `GET /appointments/:id` | ⬜ |
-| `GET /customers/:id/appointments` — customer history | ⬜ |
-| `GET /dealerships/:id/appointments?date=` — daily staff schedule | ⬜ |
+| `GET /api/availability?dealershipId=&serviceTypeId=&date=` — bay-agnostic slots, conjunctive tech + bay check | ✅ |
+| `POST /api/appointments` — validate slot, auto-assign technician + bay, optimistic `409` on conflict | ✅ |
+| `GET /api/appointments/:id` | ✅ |
+| `GET /api/customers/:id/appointments` — customer history | ✅ |
+| `GET /api/dealerships/:id/appointments?date=` — daily staff schedule | ✅ |
 
-**Known schema gaps to resolve during Phase 4:**
+**Schema changes (`Phase4AppointmentBooking` migration):**
 
-- `Appointment.Status` exists on the C# entity but may need a migration column.
-- `VehicleId` FK exists in DB; confirm entity property alignment before booking.
+- `Dealership.OpenSecondsFromMidnight` / `CloseSecondsFromMidnight` (default 08:00–17:00 UTC)
+- `Appointment.BookingDate` + `SecondsFromMidnight` replace `StartTime` / `EndTime`
+- `Appointment.Status` column (`int`, default `Scheduled`)
+- `Appointment.VehicleId` on C# entity (FK already in DB)
+
+See [PHASE_4_APPOINTMENT_BOOKING_PLAN.md](./PHASE_4_APPOINTMENT_BOOKING_PLAN.md) for design details.
 
 ---
 
@@ -137,7 +139,7 @@ Most important phase — implement carefully after Phase 3 CRUD is stable.
 | Task | Status | Evidence |
 |------|--------|----------|
 | Install xUnit, Moq, `Microsoft.EntityFrameworkCore.InMemory` | ✅ | `universal-scheduler-be.Tests/universal-scheduler-be.Tests.csproj` |
-| Unit test availability engine (slots + conflicts) | ⬜ | Blocked on Phase 4 |
+| Unit test availability engine (slots + conflicts) | ✅ | `AvailabilityEngineTests`, `AppointmentServiceTests` |
 | Unit test status transition rules | ⬜ | Blocked on Phase 5 |
 | Integration test booking (happy path + double-booking) | ⬜ | No `WebApplicationFactory` yet |
 | Auth unit tests | ✅ | 18 tests in `AuthServiceTests`, `JwtTokenServiceTests`, `AuthControllerTests` |
@@ -159,9 +161,9 @@ Most important phase — implement carefully after Phase 3 CRUD is stable.
 
 ## Recommended next session
 
-1. **Phase 4** — **Appointment Booking** (availability, `POST /appointments`, list endpoints).
-2. Align `Appointment` entity with DB (`VehicleId`, `Status` column) before booking API.
-3. Re-login after `AddCustomerAndVehiclePermissions` migration if testing customer/vehicle endpoints.
+1. **Phase 5** — **Appointment Lifecycle** (status transitions, cancel).
+2. Apply migration: `dotnet ef database update` (adds `Phase4AppointmentBooking`).
+3. Re-login after permission migrations if JWT claims are stale.
 
 ---
 

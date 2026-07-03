@@ -170,16 +170,19 @@ public class VehicleServiceTests
             IsActive = true
         });
 
-        var appointment = new Appointment();
+        var appointment = new Appointment
+        {
+            Id = Guid.NewGuid(),
+            CustomerId = _customerId,
+            VehicleId = vehicle.Id,
+            TechnicianId = technicianId,
+            ServiceBayId = serviceBayId,
+            ServiceTypeId = serviceTypeId,
+            BookingDate = DateOnly.FromDateTime(DateTime.UtcNow),
+            SecondsFromMidnight = 28_800,
+            Status = AppointmentStatus.Scheduled
+        };
         context.Appointments.Add(appointment);
-        context.Entry(appointment).Property("Id").CurrentValue = Guid.NewGuid();
-        context.Entry(appointment).Property("CustomerId").CurrentValue = _customerId;
-        context.Entry(appointment).Property("VehicleId").CurrentValue = vehicle.Id;
-        context.Entry(appointment).Property("TechnicianId").CurrentValue = technicianId;
-        context.Entry(appointment).Property("ServiceBayId").CurrentValue = serviceBayId;
-        context.Entry(appointment).Property("ServiceTypeId").CurrentValue = serviceTypeId;
-        context.Entry(appointment).Property("StartTime").CurrentValue = DateTime.UtcNow;
-        context.Entry(appointment).Property("EndTime").CurrentValue = DateTime.UtcNow.AddHours(1);
 
         await context.SaveChangesAsync();
         return vehicle;

@@ -7,4 +7,6 @@ public class DealershipResponse
     public string Address { get; init; } = string.Empty;
     public string Phone { get; init; } = string.Empty;
     public string Timezone { get; init; } = string.Empty;
+    public int OpenSecondsFromMidnight { get; init; }
+    public int CloseSecondsFromMidnight { get; init; }
 }
