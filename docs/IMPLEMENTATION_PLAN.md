@@ -1,6 +1,6 @@
 # Implementation Plan & Progress Tracker
 
-**Last updated:** 2026-07-01  
+**Last updated:** 2026-07-04  
 **Current phase:** Phase 4 — Appointment Booking (complete); Phase 5 — Appointment Lifecycle next
 
 Use this document to track what is done, in progress, and pending. Update checkboxes and the phase summary when tasks land.
@@ -172,3 +172,5 @@ See [PHASE_4_APPOINTMENT_BOOKING_PLAN.md](./PHASE_4_APPOINTMENT_BOOKING_PLAN.md)
 - [AGENTS.md](../AGENTS.md) — conventions and architecture
 - [entity-relationship-diagram.md](./entity-relationship-diagram.md) — domain model
 - [reflections/2026-06-10_auth_implementation.md](../reflections/2026-06-10_auth_implementation.md) — auth session notes
+- [Frontend integration tracker](../../simple-appointment-scheduler/docs/FRONTEND_INTEGRATION_TRACKER.md) — login + admin CRUD progress (Nuxt ↔ .NET)
+- [Frontend integration plan](../../simple-appointment-scheduler/docs/FRONTEND_INTEGRATION_PLAN.md) — BFF architecture and phase design
