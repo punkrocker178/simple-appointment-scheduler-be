@@ -12,9 +12,3 @@ At the start of each session, read `AGENTS.md` at the repo root for:
 - **Post-Session Reflection Protocol** (section 8) — run at natural session end
 
 Do not duplicate `AGENTS.md` in other files. Keep `AGENTS.md` as the single source of truth for cross-tool agent guidance (Cursor, Codex, Copilot, etc.).
-
-## Auth conventions (confirmed)
-
-- Register returns `{ email, role }` only — no token; clients login separately
-- Login: unknown email / wrong password → `"Invalid email or password."`; inactive account → `"Account is inactive."`
-- Email verification deferred — keep auth flow simple for now

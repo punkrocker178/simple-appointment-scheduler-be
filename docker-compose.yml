@@ -47,6 +47,7 @@ services:
     environment:
       HOST: 0.0.0.0
       PORT: 3000
+      NUXT_API_BASE_URL: http://backend:52100
     ports:
       - "3000:3000"
 
