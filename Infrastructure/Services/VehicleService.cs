@@ -24,20 +24,23 @@ public class VehicleService : IVehicleService
             return ServiceResult<IReadOnlyList<VehicleResponse>>.NotFound("Customer not found.");
         }
 
-        var vehiclesWithAppointments = await GetVehicleIdsWithAppointmentsAsync(cancellationToken);
-
         var vehicles = await _db.Vehicles
             .AsNoTracking()
             .Where(v => v.CustomerId == customerId)
             .OrderBy(v => v.Make)
             .ThenBy(v => v.Model)
+            .Select(v => new VehicleResponse
+            {
+                Id = v.Id,
+                CustomerId = v.CustomerId,
+                Make = v.Make,
+                Model = v.Model,
+                Year = v.Year,
+                CanDelete = !_db.Appointments.Any(a => a.VehicleId == v.Id)
+            })
             .ToListAsync(cancellationToken);
 
-        var responses = vehicles
-            .Select(v => ToResponse(v, canDelete: !vehiclesWithAppointments.Contains(v.Id)))
-            .ToList();
-
-        return ServiceResult<IReadOnlyList<VehicleResponse>>.Ok(responses);
+        return ServiceResult<IReadOnlyList<VehicleResponse>>.Ok(vehicles);
     }
 
     public async Task<ServiceResult<VehicleResponse>> CreateAsync(
@@ -125,18 +128,8 @@ public class VehicleService : IVehicleService
         return ServiceResult<object>.NoContent();
     }
 
-    private async Task<HashSet<Guid>> GetVehicleIdsWithAppointmentsAsync(CancellationToken cancellationToken)
-    {
-        var vehicleIds = await _db.Appointments
-            .Select(a => EF.Property<Guid>(a, "VehicleId"))
-            .Distinct()
-            .ToListAsync(cancellationToken);
-
-        return vehicleIds.ToHashSet();
-    }
-
     private Task<bool> HasAppointmentsAsync(Guid vehicleId, CancellationToken cancellationToken) =>
-        _db.Appointments.AnyAsync(a => EF.Property<Guid>(a, "VehicleId") == vehicleId, cancellationToken);
+        _db.Appointments.AnyAsync(a => a.VehicleId == vehicleId, cancellationToken);
 
     private static string? ValidateRequest(string make, string model, int year)
     {

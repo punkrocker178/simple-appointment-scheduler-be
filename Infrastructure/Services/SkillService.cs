@@ -18,18 +18,20 @@ public class SkillService : ISkillService
     public async Task<ServiceResult<IReadOnlyList<SkillResponse>>> GetAllAsync(
         CancellationToken cancellationToken = default)
     {
-        var inUseSkillIds = await GetInUseSkillIdsAsync(cancellationToken);
-
         var skills = await _db.Skills
             .AsNoTracking()
             .OrderBy(s => s.Name)
+            .Select(s => new SkillResponse
+            {
+                Id = s.Id,
+                Name = s.Name,
+                Description = s.Description,
+                CanDelete = !_db.TechnicianSkills.Any(ts => ts.SkillId == s.Id)
+                    && !_db.ServiceTypes.Any(st => st.SkillId == s.Id)
+            })
             .ToListAsync(cancellationToken);
 
-        var responses = skills
-            .Select(s => ToResponse(s, canDelete: !inUseSkillIds.Contains(s.Id)))
-            .ToList();
-
-        return ServiceResult<IReadOnlyList<SkillResponse>>.Ok(responses);
+        return ServiceResult<IReadOnlyList<SkillResponse>>.Ok(skills);
     }
 
     public async Task<ServiceResult<SkillResponse>> CreateAsync(
@@ -84,19 +86,6 @@ public class SkillService : ISkillService
         await _db.SaveChangesAsync(cancellationToken);
 
         return ServiceResult<object>.NoContent();
-    }
-
-    private async Task<HashSet<Guid>> GetInUseSkillIdsAsync(CancellationToken cancellationToken)
-    {
-        var technicianSkillIds = _db.TechnicianSkills.Select(ts => ts.SkillId);
-        var serviceTypeSkillIds = _db.ServiceTypes.Select(st => st.SkillId);
-
-        var inUseIds = await technicianSkillIds
-            .Concat(serviceTypeSkillIds)
-            .Distinct()
-            .ToListAsync(cancellationToken);
-
-        return inUseIds.ToHashSet();
     }
 
     private async Task<bool> IsSkillInUseAsync(Guid skillId, CancellationToken cancellationToken)
