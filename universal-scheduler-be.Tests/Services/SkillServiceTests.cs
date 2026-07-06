@@ -24,6 +24,82 @@ public class SkillServiceTests
         Assert.Equal(StatusCodes.Status200OK, result.StatusCode);
         Assert.NotNull(result.Data);
         Assert.Equal(["Brakes", "Transmission"], result.Data.Select(s => s.Name));
+        Assert.All(result.Data, s => Assert.True(s.CanDelete));
+    }
+
+    [Fact]
+    public async Task GetAllAsync_UnusedSkill_ReturnsCanDeleteTrue()
+    {
+        await using var context = AuthTestData.CreateContext();
+        var skill = CreateSkill("Detailing");
+        context.Skills.Add(skill);
+        await context.SaveChangesAsync();
+
+        var service = new SkillService(context);
+
+        var result = await service.GetAllAsync();
+
+        Assert.NotNull(result.Data);
+        Assert.True(result.Data.Single().CanDelete);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_SkillLinkedToServiceType_ReturnsCanDeleteFalse()
+    {
+        await using var context = AuthTestData.CreateContext();
+        var dealership = CreateDealership();
+        var skill = CreateSkill("Brakes");
+        context.Dealerships.Add(dealership);
+        context.Skills.Add(skill);
+        context.ServiceTypes.Add(new ServiceType
+        {
+            Id = Guid.NewGuid(),
+            DealershipId = dealership.Id,
+            SkillId = skill.Id,
+            Name = "Brake Service",
+            DurationMinutes = 60,
+            Price = 99.99m
+        });
+        await context.SaveChangesAsync();
+
+        var service = new SkillService(context);
+
+        var result = await service.GetAllAsync();
+
+        Assert.NotNull(result.Data);
+        Assert.False(result.Data.Single().CanDelete);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_SkillLinkedToTechnician_ReturnsCanDeleteFalse()
+    {
+        await using var context = AuthTestData.CreateContext();
+        var dealership = CreateDealership();
+        var skill = CreateSkill("Brakes");
+        var technicianId = Guid.NewGuid();
+        context.Dealerships.Add(dealership);
+        context.Skills.Add(skill);
+        context.Technicians.Add(new Technician
+        {
+            Id = technicianId,
+            DealershipId = dealership.Id,
+            FirstName = "Alex",
+            LastName = "Rivera",
+            IsActive = true
+        });
+        context.TechnicianSkills.Add(new TechnicianSkill
+        {
+            TechnicianId = technicianId,
+            SkillId = skill.Id
+        });
+        await context.SaveChangesAsync();
+
+        var service = new SkillService(context);
+
+        var result = await service.GetAllAsync();
+
+        Assert.NotNull(result.Data);
+        Assert.False(result.Data.Single().CanDelete);
     }
 
     [Fact]
@@ -42,6 +118,7 @@ public class SkillServiceTests
         Assert.NotNull(result.Data);
         Assert.Equal("Oil Change", result.Data.Name);
         Assert.Equal("Basic oil service", result.Data.Description);
+        Assert.True(result.Data.CanDelete);
 
         var saved = context.Skills.Single();
         Assert.Equal("Oil Change", saved.Name);
@@ -119,6 +196,39 @@ public class SkillServiceTests
             Name = "Brake Service",
             DurationMinutes = 60,
             Price = 99.99m
+        });
+        await context.SaveChangesAsync();
+
+        var service = new SkillService(context);
+
+        var result = await service.DeleteAsync(skill.Id);
+
+        Assert.Equal(StatusCodes.Status409Conflict, result.StatusCode);
+        Assert.Equal("Skill is in use and cannot be deleted.", result.Error);
+        Assert.Single(context.Skills);
+    }
+
+    [Fact]
+    public async Task DeleteAsync_SkillLinkedToTechnician_ReturnsConflict()
+    {
+        await using var context = AuthTestData.CreateContext();
+        var dealership = CreateDealership();
+        var skill = CreateSkill("Brakes");
+        var technicianId = Guid.NewGuid();
+        context.Dealerships.Add(dealership);
+        context.Skills.Add(skill);
+        context.Technicians.Add(new Technician
+        {
+            Id = technicianId,
+            DealershipId = dealership.Id,
+            FirstName = "Alex",
+            LastName = "Rivera",
+            IsActive = true
+        });
+        context.TechnicianSkills.Add(new TechnicianSkill
+        {
+            TechnicianId = technicianId,
+            SkillId = skill.Id
         });
         await context.SaveChangesAsync();
 

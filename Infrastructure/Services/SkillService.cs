@@ -21,7 +21,14 @@ public class SkillService : ISkillService
         var skills = await _db.Skills
             .AsNoTracking()
             .OrderBy(s => s.Name)
-            .Select(s => ToResponse(s))
+            .Select(s => new SkillResponse
+            {
+                Id = s.Id,
+                Name = s.Name,
+                Description = s.Description,
+                CanDelete = !_db.TechnicianSkills.Any(ts => ts.SkillId == s.Id)
+                    && !_db.ServiceTypes.Any(st => st.SkillId == s.Id)
+            })
             .ToListAsync(cancellationToken);
 
         return ServiceResult<IReadOnlyList<SkillResponse>>.Ok(skills);
@@ -57,7 +64,7 @@ public class SkillService : ISkillService
         _db.Skills.Add(skill);
         await _db.SaveChangesAsync(cancellationToken);
 
-        return ServiceResult<SkillResponse>.Created(ToResponse(skill));
+        return ServiceResult<SkillResponse>.Created(ToResponse(skill, canDelete: true));
     }
 
     public async Task<ServiceResult<object>> DeleteAsync(
@@ -70,10 +77,7 @@ public class SkillService : ISkillService
             return ServiceResult<object>.NotFound("Skill not found.");
         }
 
-        var isInUse = await _db.TechnicianSkills.AnyAsync(ts => ts.SkillId == id, cancellationToken)
-            || await _db.ServiceTypes.AnyAsync(st => st.SkillId == id, cancellationToken);
-
-        if (isInUse)
+        if (await IsSkillInUseAsync(id, cancellationToken))
         {
             return ServiceResult<object>.Conflict("Skill is in use and cannot be deleted.");
         }
@@ -84,11 +88,25 @@ public class SkillService : ISkillService
         return ServiceResult<object>.NoContent();
     }
 
-    private static SkillResponse ToResponse(Skill skill) =>
+    private async Task<bool> IsSkillInUseAsync(Guid skillId, CancellationToken cancellationToken)
+    {
+        var linkedToTechnician = await _db.TechnicianSkills
+            .AnyAsync(ts => ts.SkillId == skillId, cancellationToken);
+
+        if (linkedToTechnician)
+        {
+            return true;
+        }
+
+        return await _db.ServiceTypes.AnyAsync(st => st.SkillId == skillId, cancellationToken);
+    }
+
+    private static SkillResponse ToResponse(Skill skill, bool canDelete) =>
         new()
         {
             Id = skill.Id,
             Name = skill.Name,
-            Description = skill.Description
+            Description = skill.Description,
+            CanDelete = canDelete
         };
 }

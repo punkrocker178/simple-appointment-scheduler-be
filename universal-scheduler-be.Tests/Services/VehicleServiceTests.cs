@@ -29,6 +29,37 @@ public class VehicleServiceTests
         Assert.Equal(StatusCodes.Status200OK, result.StatusCode);
         Assert.NotNull(result.Data);
         Assert.Equal(["Alpha", "Zebra"], result.Data.Select(v => v.Make));
+        Assert.All(result.Data, v => Assert.True(v.CanDelete));
+    }
+
+    [Fact]
+    public async Task GetByCustomerAsync_VehicleWithAppointments_ReturnsCanDeleteFalse()
+    {
+        await using var context = AuthTestData.CreateContext();
+        var vehicle = await SeedVehicleWithAppointmentAsync(context);
+        var service = new VehicleService(context);
+
+        var result = await service.GetByCustomerAsync(_customerId);
+
+        Assert.NotNull(result.Data);
+        Assert.False(result.Data.Single(v => v.Id == vehicle.Id).CanDelete);
+    }
+
+    [Fact]
+    public async Task GetByCustomerAsync_VehicleWithoutAppointments_ReturnsCanDeleteTrue()
+    {
+        await using var context = AuthTestData.CreateContext();
+        SeedCustomer(context);
+        var vehicle = CreateVehicle("Toyota", "Camry");
+        context.Vehicles.Add(vehicle);
+        await context.SaveChangesAsync();
+
+        var service = new VehicleService(context);
+
+        var result = await service.GetByCustomerAsync(_customerId);
+
+        Assert.NotNull(result.Data);
+        Assert.True(result.Data.Single().CanDelete);
     }
 
     [Fact]
@@ -49,6 +80,7 @@ public class VehicleServiceTests
         Assert.NotNull(result.Data);
         Assert.Equal("Toyota", result.Data.Make);
         Assert.Equal(2022, result.Data.Year);
+        Assert.True(result.Data.CanDelete);
     }
 
     [Fact]
