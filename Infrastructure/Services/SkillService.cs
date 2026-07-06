@@ -18,13 +18,18 @@ public class SkillService : ISkillService
     public async Task<ServiceResult<IReadOnlyList<SkillResponse>>> GetAllAsync(
         CancellationToken cancellationToken = default)
     {
+        var inUseSkillIds = await GetInUseSkillIdsAsync(cancellationToken);
+
         var skills = await _db.Skills
             .AsNoTracking()
             .OrderBy(s => s.Name)
-            .Select(s => ToResponse(s))
             .ToListAsync(cancellationToken);
 
-        return ServiceResult<IReadOnlyList<SkillResponse>>.Ok(skills);
+        var responses = skills
+            .Select(s => ToResponse(s, canDelete: !inUseSkillIds.Contains(s.Id)))
+            .ToList();
+
+        return ServiceResult<IReadOnlyList<SkillResponse>>.Ok(responses);
     }
 
     public async Task<ServiceResult<SkillResponse>> CreateAsync(
@@ -57,7 +62,7 @@ public class SkillService : ISkillService
         _db.Skills.Add(skill);
         await _db.SaveChangesAsync(cancellationToken);
 
-        return ServiceResult<SkillResponse>.Created(ToResponse(skill));
+        return ServiceResult<SkillResponse>.Created(ToResponse(skill, canDelete: true));
     }
 
     public async Task<ServiceResult<object>> DeleteAsync(
@@ -70,10 +75,7 @@ public class SkillService : ISkillService
             return ServiceResult<object>.NotFound("Skill not found.");
         }
 
-        var isInUse = await _db.TechnicianSkills.AnyAsync(ts => ts.SkillId == id, cancellationToken)
-            || await _db.ServiceTypes.AnyAsync(st => st.SkillId == id, cancellationToken);
-
-        if (isInUse)
+        if (await IsSkillInUseAsync(id, cancellationToken))
         {
             return ServiceResult<object>.Conflict("Skill is in use and cannot be deleted.");
         }
@@ -84,11 +86,38 @@ public class SkillService : ISkillService
         return ServiceResult<object>.NoContent();
     }
 
-    private static SkillResponse ToResponse(Skill skill) =>
+    private async Task<HashSet<Guid>> GetInUseSkillIdsAsync(CancellationToken cancellationToken)
+    {
+        var technicianSkillIds = _db.TechnicianSkills.Select(ts => ts.SkillId);
+        var serviceTypeSkillIds = _db.ServiceTypes.Select(st => st.SkillId);
+
+        var inUseIds = await technicianSkillIds
+            .Concat(serviceTypeSkillIds)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
+        return inUseIds.ToHashSet();
+    }
+
+    private async Task<bool> IsSkillInUseAsync(Guid skillId, CancellationToken cancellationToken)
+    {
+        var linkedToTechnician = await _db.TechnicianSkills
+            .AnyAsync(ts => ts.SkillId == skillId, cancellationToken);
+
+        if (linkedToTechnician)
+        {
+            return true;
+        }
+
+        return await _db.ServiceTypes.AnyAsync(st => st.SkillId == skillId, cancellationToken);
+    }
+
+    private static SkillResponse ToResponse(Skill skill, bool canDelete) =>
         new()
         {
             Id = skill.Id,
             Name = skill.Name,
-            Description = skill.Description
+            Description = skill.Description,
+            CanDelete = canDelete
         };
 }

@@ -24,15 +24,20 @@ public class VehicleService : IVehicleService
             return ServiceResult<IReadOnlyList<VehicleResponse>>.NotFound("Customer not found.");
         }
 
+        var vehiclesWithAppointments = await GetVehicleIdsWithAppointmentsAsync(cancellationToken);
+
         var vehicles = await _db.Vehicles
             .AsNoTracking()
             .Where(v => v.CustomerId == customerId)
             .OrderBy(v => v.Make)
             .ThenBy(v => v.Model)
-            .Select(v => ToResponse(v))
             .ToListAsync(cancellationToken);
 
-        return ServiceResult<IReadOnlyList<VehicleResponse>>.Ok(vehicles);
+        var responses = vehicles
+            .Select(v => ToResponse(v, canDelete: !vehiclesWithAppointments.Contains(v.Id)))
+            .ToList();
+
+        return ServiceResult<IReadOnlyList<VehicleResponse>>.Ok(responses);
     }
 
     public async Task<ServiceResult<VehicleResponse>> CreateAsync(
@@ -63,7 +68,7 @@ public class VehicleService : IVehicleService
         _db.Vehicles.Add(vehicle);
         await _db.SaveChangesAsync(cancellationToken);
 
-        return ServiceResult<VehicleResponse>.Created(ToResponse(vehicle));
+        return ServiceResult<VehicleResponse>.Created(ToResponse(vehicle, canDelete: true));
     }
 
     public async Task<ServiceResult<VehicleResponse>> UpdateAsync(
@@ -92,7 +97,8 @@ public class VehicleService : IVehicleService
 
         await _db.SaveChangesAsync(cancellationToken);
 
-        return ServiceResult<VehicleResponse>.Ok(ToResponse(vehicle));
+        var canDelete = !await HasAppointmentsAsync(id, cancellationToken);
+        return ServiceResult<VehicleResponse>.Ok(ToResponse(vehicle, canDelete));
     }
 
     public async Task<ServiceResult<object>> DeleteAsync(
@@ -108,10 +114,7 @@ public class VehicleService : IVehicleService
             return ServiceResult<object>.NotFound("Vehicle not found.");
         }
 
-        var hasAppointments = await _db.Appointments
-            .AnyAsync(a => EF.Property<Guid>(a, "VehicleId") == id, cancellationToken);
-
-        if (hasAppointments)
+        if (await HasAppointmentsAsync(id, cancellationToken))
         {
             return ServiceResult<object>.Conflict("Vehicle has appointments and cannot be deleted.");
         }
@@ -121,6 +124,19 @@ public class VehicleService : IVehicleService
 
         return ServiceResult<object>.NoContent();
     }
+
+    private async Task<HashSet<Guid>> GetVehicleIdsWithAppointmentsAsync(CancellationToken cancellationToken)
+    {
+        var vehicleIds = await _db.Appointments
+            .Select(a => EF.Property<Guid>(a, "VehicleId"))
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
+        return vehicleIds.ToHashSet();
+    }
+
+    private Task<bool> HasAppointmentsAsync(Guid vehicleId, CancellationToken cancellationToken) =>
+        _db.Appointments.AnyAsync(a => EF.Property<Guid>(a, "VehicleId") == vehicleId, cancellationToken);
 
     private static string? ValidateRequest(string make, string model, int year)
     {
@@ -143,13 +159,14 @@ public class VehicleService : IVehicleService
         return null;
     }
 
-    private static VehicleResponse ToResponse(Vehicle vehicle) =>
+    private static VehicleResponse ToResponse(Vehicle vehicle, bool canDelete) =>
         new()
         {
             Id = vehicle.Id,
             CustomerId = vehicle.CustomerId,
             Make = vehicle.Make,
             Model = vehicle.Model,
-            Year = vehicle.Year
+            Year = vehicle.Year,
+            CanDelete = canDelete
         };
 }
