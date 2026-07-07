@@ -23,9 +23,11 @@ public record ExistingAppointmentRecord(
 
 public record SlotAssignment(Guid TechnicianId, Guid ServiceBayId);
 
+public record AvailabilitySlot(int SecondsFromMidnight, bool Available);
+
 public static class AvailabilityEngine
 {
-    public static IReadOnlyList<int> GetAvailableSlots(
+    public static IReadOnlyList<AvailabilitySlot> GetSlots(
         int openSeconds,
         int closeSeconds,
         int durationMinutes,
@@ -53,14 +55,10 @@ public static class AvailabilityEngine
             .ThenBy(b => b.Id)
             .ToList();
 
-        if (qualifiedTechnicians.Count == 0 || orderedBays.Count == 0)
-        {
-            return [];
-        }
-
         var todayUtc = DateOnly.FromDateTime(utcNow);
         var currentSeconds = utcNow.Hour * 3600 + utcNow.Minute * 60 + utcNow.Second;
-        var slots = new List<int>();
+        var hasResources = qualifiedTechnicians.Count > 0 && orderedBays.Count > 0;
+        var slots = new List<AvailabilitySlot>();
 
         for (var start = openSeconds; start <= closeSeconds - durationSeconds; start += AppointmentSchedulingConstants.SlotStepSeconds)
         {
@@ -69,15 +67,11 @@ public static class AvailabilityEngine
                 continue;
             }
 
-            if (bookingDate == todayUtc && start < currentSeconds)
-            {
-                continue;
-            }
+            var isPast = bookingDate == todayUtc && start < currentSeconds;
+            var isAvailable = !isPast && hasResources
+                && TryAssignSlot(start, durationSeconds, qualifiedTechnicians, orderedBays, blockingAppointments) is not null;
 
-            if (TryAssignSlot(start, durationSeconds, qualifiedTechnicians, orderedBays, blockingAppointments) is not null)
-            {
-                slots.Add(start);
-            }
+            slots.Add(new AvailabilitySlot(start, isAvailable));
         }
 
         return slots;
