@@ -1,4 +1,5 @@
 using Infrastructure.Appointments.Dtos;
+using Infrastructure.Auth;
 using Infrastructure.Entities;
 using Infrastructure.Services;
 using Microsoft.AspNetCore.Http;
@@ -33,7 +34,7 @@ public class AppointmentServiceTests
             ServiceTypeId = _serviceTypeId,
             BookingDate = BookingDate,
             SecondsFromMidnight = 28_800
-        });
+        }, StaffCaller());
 
         Assert.Equal(StatusCodes.Status201Created, result.StatusCode);
         Assert.NotNull(result.Data);
@@ -71,7 +72,7 @@ public class AppointmentServiceTests
             ServiceTypeId = _serviceTypeId,
             BookingDate = BookingDate,
             SecondsFromMidnight = 28_800
-        });
+        }, StaffCaller());
 
         Assert.Equal(StatusCodes.Status409Conflict, result.StatusCode);
         Assert.Equal("The requested time slot is no longer available.", result.Error);
@@ -91,7 +92,7 @@ public class AppointmentServiceTests
             ServiceTypeId = _serviceTypeId,
             BookingDate = BookingDate,
             SecondsFromMidnight = 59_400
-        });
+        }, StaffCaller());
 
         Assert.Equal(StatusCodes.Status400BadRequest, result.StatusCode);
         Assert.Equal("Requested time is outside business hours.", result.Error);
@@ -111,7 +112,7 @@ public class AppointmentServiceTests
             ServiceTypeId = _serviceTypeId,
             BookingDate = BookingDate,
             SecondsFromMidnight = 28_800
-        });
+        }, StaffCaller());
 
         Assert.Equal(StatusCodes.Status404NotFound, result.StatusCode);
         Assert.Equal("Customer not found.", result.Error);
@@ -139,7 +140,7 @@ public class AppointmentServiceTests
 
         var service = CreateService(context);
 
-        var result = await service.GetByIdAsync(appointmentId);
+        var result = await service.GetByIdAsync(appointmentId, StaffCaller());
 
         Assert.Equal(StatusCodes.Status200OK, result.StatusCode);
         Assert.NotNull(result.Data);
@@ -267,4 +268,115 @@ public class AppointmentServiceTests
         });
         context.SaveChanges();
     }
+
+    [Fact]
+    public async Task CreateAsync_UserRole_OtherCustomer_ReturnsForbidden()
+    {
+        await using var context = AuthTestData.CreateContext();
+        SeedSchedulingGraph(context);
+        var service = CreateService(context);
+
+        var result = await service.CreateAsync(new CreateAppointmentRequest
+        {
+            CustomerId = Guid.NewGuid(),
+            VehicleId = _vehicleId,
+            ServiceTypeId = _serviceTypeId,
+            BookingDate = BookingDate,
+            SecondsFromMidnight = 28_800
+        }, UserCaller(_customerId));
+
+        Assert.Equal(StatusCodes.Status403Forbidden, result.StatusCode);
+        Assert.Equal(
+            "You can only book appointments for your own customer profile.",
+            result.Error);
+    }
+
+    [Fact]
+    public async Task CreateAsync_UserRole_OwnCustomer_ReturnsCreated()
+    {
+        await using var context = AuthTestData.CreateContext();
+        SeedSchedulingGraph(context);
+        var service = CreateService(context);
+
+        var result = await service.CreateAsync(new CreateAppointmentRequest
+        {
+            CustomerId = _customerId,
+            VehicleId = _vehicleId,
+            ServiceTypeId = _serviceTypeId,
+            BookingDate = BookingDate,
+            SecondsFromMidnight = 28_800
+        }, UserCaller(_customerId));
+
+        Assert.Equal(StatusCodes.Status201Created, result.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetByIdAsync_UserRole_OwnAppointment_ReturnsOk()
+    {
+        await using var context = AuthTestData.CreateContext();
+        SeedSchedulingGraph(context);
+        var appointmentId = Guid.NewGuid();
+        context.Appointments.Add(new Appointment
+        {
+            Id = appointmentId,
+            CustomerId = _customerId,
+            VehicleId = _vehicleId,
+            ServiceTypeId = _serviceTypeId,
+            TechnicianId = _technicianId,
+            ServiceBayId = _bayId,
+            BookingDate = BookingDate,
+            SecondsFromMidnight = 30_600,
+            Status = AppointmentStatus.Scheduled
+        });
+        await context.SaveChangesAsync();
+
+        var service = CreateService(context);
+
+        var result = await service.GetByIdAsync(appointmentId, UserCaller(_customerId));
+
+        Assert.Equal(StatusCodes.Status200OK, result.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetByIdAsync_UserRole_OtherCustomerAppointment_ReturnsForbidden()
+    {
+        await using var context = AuthTestData.CreateContext();
+        SeedSchedulingGraph(context);
+        var otherCustomerId = Guid.NewGuid();
+        context.Customers.Add(new Customer
+        {
+            Id = otherCustomerId,
+            FirstName = "Other",
+            LastName = "Customer",
+            Email = "other@example.com",
+            Phone = "+1-555-0199",
+            CreatedAt = FixedNow.UtcDateTime
+        });
+        var appointmentId = Guid.NewGuid();
+        context.Appointments.Add(new Appointment
+        {
+            Id = appointmentId,
+            CustomerId = otherCustomerId,
+            VehicleId = _vehicleId,
+            ServiceTypeId = _serviceTypeId,
+            TechnicianId = _technicianId,
+            ServiceBayId = _bayId,
+            BookingDate = BookingDate,
+            SecondsFromMidnight = 30_600,
+            Status = AppointmentStatus.Scheduled
+        });
+        await context.SaveChangesAsync();
+
+        var service = CreateService(context);
+
+        var result = await service.GetByIdAsync(appointmentId, UserCaller(_customerId));
+
+        Assert.Equal(StatusCodes.Status403Forbidden, result.StatusCode);
+    }
+
+    private static AppointmentCallerContext StaffCaller() =>
+        new(Guid.NewGuid(), "Staff", null, CanReadAllAppointments: true, CanReadOwnAppointments: false);
+
+    private static AppointmentCallerContext UserCaller(Guid customerId) =>
+        new(Guid.NewGuid(), "User", customerId, CanReadAllAppointments: false, CanReadOwnAppointments: true);
 }

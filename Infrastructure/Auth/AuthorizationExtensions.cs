@@ -12,6 +12,11 @@ public static class AuthorizationExtensions
         options.AddPolicy("appointments:read:own", policy =>
             policy.RequireClaim("permission", "appointments:read:own"));
 
+        options.AddPolicy("appointments:read:any", policy =>
+            policy.RequireAssertion(context =>
+                context.User.HasClaim("permission", "appointments:read")
+                || context.User.HasClaim("permission", "appointments:read:own")));
+
         options.AddPolicy("appointments:write", policy =>
             policy.RequireClaim("permission", "appointments:write"));
 

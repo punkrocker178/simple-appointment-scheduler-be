@@ -10,6 +10,8 @@ public class User
     public string LastName { get; set; } = string.Empty;
     public bool IsActive { get; set; } = true;
     public DateTime CreatedAt { get; set; }
+    public Guid? CustomerId { get; set; }
 
     public Role Role { get; set; } = null!;
+    public Customer? Customer { get; set; }
 }

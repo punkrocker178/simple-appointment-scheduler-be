@@ -89,11 +89,13 @@ public class AuthControllerTests
     public void Me_ReturnsClaimsFromAuthenticatedUser()
     {
         var userId = Guid.NewGuid();
+        var customerId = Guid.NewGuid();
         var claims = new[]
         {
             new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
             new Claim(ClaimTypes.Email, "user@example.com"),
             new Claim(ClaimTypes.Role, "User"),
+            new Claim(AuthClaimTypes.CustomerId, customerId.ToString()),
             new Claim("permission", "appointments:read:own"),
             new Claim("permission", "appointments:write")
         };
@@ -118,6 +120,7 @@ public class AuthControllerTests
         Assert.Equal(userId.ToString(), payloadType.GetProperty("UserId")?.GetValue(okResult.Value));
         Assert.Equal("user@example.com", payloadType.GetProperty("Email")?.GetValue(okResult.Value));
         Assert.Equal("User", payloadType.GetProperty("Role")?.GetValue(okResult.Value));
+        Assert.Equal(customerId, payloadType.GetProperty("CustomerId")?.GetValue(okResult.Value));
 
         var permissions = Assert.IsType<string[]>(payloadType.GetProperty("Permissions")?.GetValue(okResult.Value));
         Assert.Equal(["appointments:read:own", "appointments:write"], permissions);

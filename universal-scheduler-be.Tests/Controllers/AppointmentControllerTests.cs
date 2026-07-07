@@ -1,4 +1,5 @@
 using Infrastructure.Appointments.Dtos;
+using Infrastructure.Auth;
 using Infrastructure.Common;
 using Infrastructure.Services;
 using Microsoft.AspNetCore.Http;
@@ -10,6 +11,13 @@ namespace universal_scheduler_be.Tests.Controllers;
 
 public class AppointmentControllerTests
 {
+    private static readonly AppointmentCallerContext Caller = new(
+        Guid.NewGuid(),
+        "Staff",
+        null,
+        CanReadAllAppointments: true,
+        CanReadOwnAppointments: false);
+
     private static readonly AppointmentResponse SampleResponse = new()
     {
         Id = Guid.Parse("a1000001-0000-4000-8000-000000000099"),
@@ -29,10 +37,18 @@ public class AppointmentControllerTests
     {
         var appointmentService = new Mock<IAppointmentService>();
         appointmentService
-            .Setup(service => service.CreateAsync(It.IsAny<CreateAppointmentRequest>(), It.IsAny<CancellationToken>()))
+            .Setup(service => service.CreateAsync(
+                It.IsAny<CreateAppointmentRequest>(),
+                It.IsAny<AppointmentCallerContext>(),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(ServiceResult<AppointmentResponse>.Created(SampleResponse));
 
-        var controller = new AppointmentController(appointmentService.Object);
+        var callerResolver = new Mock<IAppointmentCallerResolver>();
+        callerResolver
+            .Setup(resolver => resolver.Resolve(It.IsAny<System.Security.Claims.ClaimsPrincipal>()))
+            .Returns(Caller);
+
+        var controller = new AppointmentController(appointmentService.Object, callerResolver.Object);
 
         var actionResult = await controller.Create(new CreateAppointmentRequest(), CancellationToken.None);
 
@@ -46,10 +62,18 @@ public class AppointmentControllerTests
     {
         var appointmentService = new Mock<IAppointmentService>();
         appointmentService
-            .Setup(service => service.CreateAsync(It.IsAny<CreateAppointmentRequest>(), It.IsAny<CancellationToken>()))
+            .Setup(service => service.CreateAsync(
+                It.IsAny<CreateAppointmentRequest>(),
+                It.IsAny<AppointmentCallerContext>(),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(ServiceResult<AppointmentResponse>.Conflict("The requested time slot is no longer available."));
 
-        var controller = new AppointmentController(appointmentService.Object);
+        var callerResolver = new Mock<IAppointmentCallerResolver>();
+        callerResolver
+            .Setup(resolver => resolver.Resolve(It.IsAny<System.Security.Claims.ClaimsPrincipal>()))
+            .Returns(Caller);
+
+        var controller = new AppointmentController(appointmentService.Object, callerResolver.Object);
 
         var actionResult = await controller.Create(new CreateAppointmentRequest(), CancellationToken.None);
 
@@ -62,10 +86,18 @@ public class AppointmentControllerTests
     {
         var appointmentService = new Mock<IAppointmentService>();
         appointmentService
-            .Setup(service => service.GetByIdAsync(SampleResponse.Id, It.IsAny<CancellationToken>()))
+            .Setup(service => service.GetByIdAsync(
+                SampleResponse.Id,
+                It.IsAny<AppointmentCallerContext>(),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(ServiceResult<AppointmentResponse>.Ok(SampleResponse));
 
-        var controller = new AppointmentController(appointmentService.Object);
+        var callerResolver = new Mock<IAppointmentCallerResolver>();
+        callerResolver
+            .Setup(resolver => resolver.Resolve(It.IsAny<System.Security.Claims.ClaimsPrincipal>()))
+            .Returns(Caller);
+
+        var controller = new AppointmentController(appointmentService.Object, callerResolver.Object);
 
         var actionResult = await controller.GetById(SampleResponse.Id, CancellationToken.None);
 
@@ -77,7 +109,9 @@ public class AppointmentControllerTests
     public async Task GetByDealershipAndDate_ReturnsBadRequestForInvalidDate()
     {
         var appointmentService = new Mock<IAppointmentService>();
-        var controller = new AppointmentController(appointmentService.Object);
+        var controller = new AppointmentController(
+            appointmentService.Object,
+            Mock.Of<IAppointmentCallerResolver>());
 
         var actionResult = await controller.GetByDealershipAndDate(
             Guid.NewGuid(),

@@ -39,6 +39,16 @@ public class AuthService : IAuthService
             return AuthResult.Conflict("A user with this email already exists.");
         }
 
+        var customer = new Customer
+        {
+            Id = Guid.NewGuid(),
+            FirstName = request.FirstName.Trim(),
+            LastName = request.LastName.Trim(),
+            Email = request.Email.Trim(),
+            Phone = request.Phone?.Trim() ?? string.Empty,
+            CreatedAt = DateTime.UtcNow
+        };
+
         var user = new User
         {
             Id = Guid.NewGuid(),
@@ -47,10 +57,12 @@ public class AuthService : IAuthService
             RoleId = AuthSeedData.RoleIds.User,
             FirstName = request.FirstName.Trim(),
             LastName = request.LastName.Trim(),
+            CustomerId = customer.Id,
             IsActive = true,
             CreatedAt = DateTime.UtcNow
         };
 
+        _db.Customers.Add(customer);
         _db.Users.Add(user);
         await _db.SaveChangesAsync(cancellationToken);
 

@@ -58,6 +58,7 @@ public class AuthController : ControllerBase
             UserId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? user.FindFirstValue("sub"),
             Email = user.FindFirstValue(ClaimTypes.Email) ?? user.FindFirstValue("email"),
             Role = user.FindFirstValue(ClaimTypes.Role),
+            CustomerId = user.GetCustomerId(),
             Permissions = user.FindAll("permission").Select(c => c.Value).ToArray(),
             Claims = claims
         });

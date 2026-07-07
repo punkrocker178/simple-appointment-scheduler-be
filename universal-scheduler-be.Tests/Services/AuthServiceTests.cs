@@ -37,6 +37,12 @@ public class AuthServiceTests
         Assert.Equal("Doe", savedUser.LastName);
         Assert.Equal(AuthSeedData.RoleIds.User, savedUser.RoleId);
         Assert.True(savedUser.IsActive);
+        Assert.NotNull(savedUser.CustomerId);
+
+        var savedCustomer = context.Customers.Single(customer => customer.Id == savedUser.CustomerId);
+        Assert.Equal("Jane", savedCustomer.FirstName);
+        Assert.Equal("Doe", savedCustomer.LastName);
+        Assert.Equal("newuser@example.com", savedCustomer.Email);
     }
 
     [Fact]
