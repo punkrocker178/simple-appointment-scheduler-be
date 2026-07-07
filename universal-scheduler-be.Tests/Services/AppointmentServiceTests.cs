@@ -374,6 +374,184 @@ public class AppointmentServiceTests
         Assert.Equal(StatusCodes.Status403Forbidden, result.StatusCode);
     }
 
+    [Fact]
+    public async Task UpdateStatusAsync_Staff_ScheduledToInProgress_ReturnsOk()
+    {
+        await using var context = AuthTestData.CreateContext();
+        SeedSchedulingGraph(context);
+        var appointmentId = SeedAppointment(context);
+
+        var service = CreateService(context);
+
+        var result = await service.UpdateStatusAsync(
+            appointmentId,
+            new UpdateAppointmentStatusRequest { Status = AppointmentStatus.InProgress },
+            StaffCaller());
+
+        Assert.Equal(StatusCodes.Status200OK, result.StatusCode);
+        Assert.Equal(AppointmentStatus.InProgress, result.Data?.Status);
+        Assert.NotNull(result.Data?.StartedAtUtc);
+    }
+
+    [Fact]
+    public async Task UpdateStatusAsync_Staff_InProgressToCompleted_ReturnsOk()
+    {
+        await using var context = AuthTestData.CreateContext();
+        SeedSchedulingGraph(context);
+        var appointmentId = SeedAppointment(context, AppointmentStatus.InProgress);
+
+        var service = CreateService(context);
+
+        var result = await service.UpdateStatusAsync(
+            appointmentId,
+            new UpdateAppointmentStatusRequest { Status = AppointmentStatus.Completed },
+            StaffCaller());
+
+        Assert.Equal(StatusCodes.Status200OK, result.StatusCode);
+        Assert.Equal(AppointmentStatus.Completed, result.Data?.Status);
+        Assert.NotNull(result.Data?.CompletedAtUtc);
+    }
+
+    [Fact]
+    public async Task UpdateStatusAsync_Staff_ScheduledToCompleted_ReturnsConflict()
+    {
+        await using var context = AuthTestData.CreateContext();
+        SeedSchedulingGraph(context);
+        var appointmentId = SeedAppointment(context);
+
+        var service = CreateService(context);
+
+        var result = await service.UpdateStatusAsync(
+            appointmentId,
+            new UpdateAppointmentStatusRequest { Status = AppointmentStatus.Completed },
+            StaffCaller());
+
+        Assert.Equal(StatusCodes.Status409Conflict, result.StatusCode);
+    }
+
+    [Fact]
+    public async Task UpdateStatusAsync_UserRole_ReturnsForbidden()
+    {
+        await using var context = AuthTestData.CreateContext();
+        SeedSchedulingGraph(context);
+        var appointmentId = SeedAppointment(context);
+
+        var service = CreateService(context);
+
+        var result = await service.UpdateStatusAsync(
+            appointmentId,
+            new UpdateAppointmentStatusRequest { Status = AppointmentStatus.InProgress },
+            UserCaller(_customerId));
+
+        Assert.Equal(StatusCodes.Status403Forbidden, result.StatusCode);
+    }
+
+    [Fact]
+    public async Task CancelAsync_Customer_OutsideCutoff_ReturnsOk()
+    {
+        await using var context = AuthTestData.CreateContext();
+        SeedSchedulingGraph(context);
+        var appointmentId = SeedAppointment(context);
+        var service = new AppointmentService(context, new FixedTimeProvider(new DateTimeOffset(2026, 6, 17, 5, 0, 0, TimeSpan.Zero)));
+
+        var result = await service.CancelAsync(
+            appointmentId,
+            new CancelAppointmentRequest { Reason = "Plans changed" },
+            UserCaller(_customerId));
+
+        Assert.Equal(StatusCodes.Status200OK, result.StatusCode);
+        Assert.Equal(AppointmentStatus.Cancelled, result.Data?.Status);
+        Assert.Equal("Plans changed", result.Data?.CancellationReason);
+    }
+
+    [Fact]
+    public async Task CancelAsync_Customer_WithinCutoff_ReturnsBadRequest()
+    {
+        await using var context = AuthTestData.CreateContext();
+        SeedSchedulingGraph(context);
+        var appointmentId = SeedAppointment(context);
+        var service = new AppointmentService(context, new FixedTimeProvider(new DateTimeOffset(2026, 6, 17, 7, 0, 0, TimeSpan.Zero)));
+
+        var result = await service.CancelAsync(
+            appointmentId,
+            new CancelAppointmentRequest { Reason = "Too late" },
+            UserCaller(_customerId));
+
+        Assert.Equal(StatusCodes.Status400BadRequest, result.StatusCode);
+    }
+
+    [Fact]
+    public async Task CancelAsync_Staff_WithinCutoff_ReturnsOk()
+    {
+        await using var context = AuthTestData.CreateContext();
+        SeedSchedulingGraph(context);
+        var appointmentId = SeedAppointment(context);
+        var service = new AppointmentService(context, new FixedTimeProvider(new DateTimeOffset(2026, 6, 17, 7, 0, 0, TimeSpan.Zero)));
+
+        var result = await service.CancelAsync(
+            appointmentId,
+            new CancelAppointmentRequest { Reason = "Customer no-show" },
+            StaffCaller());
+
+        Assert.Equal(StatusCodes.Status200OK, result.StatusCode);
+        Assert.Equal(AppointmentStatus.Cancelled, result.Data?.Status);
+    }
+
+    [Fact]
+    public async Task CancelAsync_Customer_InProgress_ReturnsForbidden()
+    {
+        await using var context = AuthTestData.CreateContext();
+        SeedSchedulingGraph(context);
+        var appointmentId = SeedAppointment(context, AppointmentStatus.InProgress);
+
+        var service = CreateService(context);
+
+        var result = await service.CancelAsync(
+            appointmentId,
+            new CancelAppointmentRequest { Reason = "Changed mind" },
+            UserCaller(_customerId));
+
+        Assert.Equal(StatusCodes.Status403Forbidden, result.StatusCode);
+    }
+
+    [Fact]
+    public async Task CancelAsync_EmptyReason_ReturnsBadRequest()
+    {
+        await using var context = AuthTestData.CreateContext();
+        SeedSchedulingGraph(context);
+        var appointmentId = SeedAppointment(context);
+
+        var service = CreateService(context);
+
+        var result = await service.CancelAsync(
+            appointmentId,
+            new CancelAppointmentRequest { Reason = "   " },
+            StaffCaller());
+
+        Assert.Equal(StatusCodes.Status400BadRequest, result.StatusCode);
+    }
+
+    private Guid SeedAppointment(
+        Infrastructure.Data.ApplicationDbContext context,
+        AppointmentStatus status = AppointmentStatus.Scheduled)
+    {
+        var appointmentId = Guid.NewGuid();
+        context.Appointments.Add(new Appointment
+        {
+            Id = appointmentId,
+            CustomerId = _customerId,
+            VehicleId = _vehicleId,
+            ServiceTypeId = _serviceTypeId,
+            TechnicianId = _technicianId,
+            ServiceBayId = _bayId,
+            BookingDate = BookingDate,
+            SecondsFromMidnight = 28_800,
+            Status = status
+        });
+        context.SaveChanges();
+        return appointmentId;
+    }
+
     private static AppointmentCallerContext StaffCaller() =>
         new(Guid.NewGuid(), "Staff", null, CanReadAllAppointments: true, CanReadOwnAppointments: false);
 

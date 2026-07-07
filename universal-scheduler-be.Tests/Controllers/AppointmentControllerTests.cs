@@ -121,4 +121,60 @@ public class AppointmentControllerTests
         var problemResult = Assert.IsType<ObjectResult>(actionResult);
         Assert.Equal(StatusCodes.Status400BadRequest, problemResult.StatusCode);
     }
+
+    [Fact]
+    public async Task UpdateStatus_ReturnsOkWhenServiceSucceeds()
+    {
+        var appointmentService = new Mock<IAppointmentService>();
+        appointmentService
+            .Setup(service => service.UpdateStatusAsync(
+                SampleResponse.Id,
+                It.IsAny<UpdateAppointmentStatusRequest>(),
+                It.IsAny<AppointmentCallerContext>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ServiceResult<AppointmentResponse>.Ok(SampleResponse));
+
+        var callerResolver = new Mock<IAppointmentCallerResolver>();
+        callerResolver
+            .Setup(resolver => resolver.Resolve(It.IsAny<System.Security.Claims.ClaimsPrincipal>()))
+            .Returns(Caller);
+
+        var controller = new AppointmentController(appointmentService.Object, callerResolver.Object);
+
+        var actionResult = await controller.UpdateStatus(
+            SampleResponse.Id,
+            new UpdateAppointmentStatusRequest { Status = Infrastructure.Entities.AppointmentStatus.InProgress },
+            CancellationToken.None);
+
+        var objectResult = Assert.IsType<ObjectResult>(actionResult);
+        Assert.Equal(StatusCodes.Status200OK, objectResult.StatusCode);
+    }
+
+    [Fact]
+    public async Task Cancel_ReturnsConflictWhenServiceFails()
+    {
+        var appointmentService = new Mock<IAppointmentService>();
+        appointmentService
+            .Setup(service => service.CancelAsync(
+                SampleResponse.Id,
+                It.IsAny<CancelAppointmentRequest>(),
+                It.IsAny<AppointmentCallerContext>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ServiceResult<AppointmentResponse>.Conflict("Appointment is in a terminal state and cannot be cancelled."));
+
+        var callerResolver = new Mock<IAppointmentCallerResolver>();
+        callerResolver
+            .Setup(resolver => resolver.Resolve(It.IsAny<System.Security.Claims.ClaimsPrincipal>()))
+            .Returns(Caller);
+
+        var controller = new AppointmentController(appointmentService.Object, callerResolver.Object);
+
+        var actionResult = await controller.Cancel(
+            SampleResponse.Id,
+            new CancelAppointmentRequest { Reason = "No longer needed" },
+            CancellationToken.None);
+
+        var problemResult = Assert.IsType<ObjectResult>(actionResult);
+        Assert.Equal(StatusCodes.Status409Conflict, problemResult.StatusCode);
+    }
 }

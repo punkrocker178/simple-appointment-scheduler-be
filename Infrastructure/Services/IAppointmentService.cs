@@ -24,4 +24,16 @@ public interface IAppointmentService
         Guid dealershipId,
         DateOnly date,
         CancellationToken cancellationToken = default);
+
+    Task<ServiceResult<AppointmentResponse>> UpdateStatusAsync(
+        Guid id,
+        UpdateAppointmentStatusRequest request,
+        AppointmentCallerContext caller,
+        CancellationToken cancellationToken = default);
+
+    Task<ServiceResult<AppointmentResponse>> CancelAsync(
+        Guid id,
+        CancelAppointmentRequest request,
+        AppointmentCallerContext caller,
+        CancellationToken cancellationToken = default);
 }

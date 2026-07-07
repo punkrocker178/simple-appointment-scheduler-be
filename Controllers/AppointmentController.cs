@@ -108,6 +108,52 @@ public class AppointmentController : ControllerBase
         return ToActionResult(result);
     }
 
+    [HttpPatch("appointments/{id:guid}/status")]
+    [Authorize(Policy = "appointments:write")]
+    [ProducesResponseType(typeof(AppointmentResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> UpdateStatus(
+        Guid id,
+        [FromBody] UpdateAppointmentStatusRequest request,
+        CancellationToken cancellationToken)
+    {
+        var caller = _callerResolver.Resolve(User);
+        if (caller is null)
+        {
+            return Unauthorized();
+        }
+
+        var result = await _appointmentService.UpdateStatusAsync(id, request, caller, cancellationToken);
+        return ToActionResult(result);
+    }
+
+    [HttpPost("appointments/{id:guid}/cancel")]
+    [Authorize(Policy = "appointments:write")]
+    [ProducesResponseType(typeof(AppointmentResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> Cancel(
+        Guid id,
+        [FromBody] CancelAppointmentRequest request,
+        CancellationToken cancellationToken)
+    {
+        var caller = _callerResolver.Resolve(User);
+        if (caller is null)
+        {
+            return Unauthorized();
+        }
+
+        var result = await _appointmentService.CancelAsync(id, request, caller, cancellationToken);
+        return ToActionResult(result);
+    }
+
     private IActionResult ToActionResult<T>(ServiceResult<T> result)
     {
         if (result.Data is not null)
