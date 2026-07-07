@@ -82,12 +82,8 @@ public static class AvailabilityEngine
         int durationSeconds,
         IReadOnlyList<AvailabilityTechnician> qualifiedTechnicians,
         IReadOnlyList<AvailabilityBay> bays,
-        IReadOnlyList<ExistingAppointmentRecord> appointments)
+        IReadOnlyList<ExistingAppointmentRecord> blockingAppointments)
     {
-        var blockingAppointments = appointments
-            .Where(a => IsBlockingStatus(a.Status))
-            .ToList();
-
         foreach (var technician in qualifiedTechnicians)
         {
             if (HasOverlap(technician.Id, null, secondsFromMidnight, durationSeconds, blockingAppointments))
