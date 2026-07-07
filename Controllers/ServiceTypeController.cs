@@ -19,7 +19,7 @@ public class ServiceTypeController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize(Policy = "servicetypes:read")]
+    [Authorize(Policy = "servicetypes:read:any")]
     [ProducesResponseType(typeof(IReadOnlyList<ServiceTypeResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]

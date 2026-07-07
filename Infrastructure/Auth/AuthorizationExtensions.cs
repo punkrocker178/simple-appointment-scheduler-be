@@ -38,6 +38,14 @@ public static class AuthorizationExtensions
         options.AddPolicy("servicetypes:read", policy =>
             policy.RequireClaim("permission", "servicetypes:read"));
 
+        options.AddPolicy("servicetypes:read:customer", policy =>
+            policy.RequireClaim("permission", "servicetypes:read:customer"));
+
+        options.AddPolicy("servicetypes:read:any", policy =>
+            policy.RequireAssertion(context =>
+                context.User.HasClaim("permission", "servicetypes:read")
+                || context.User.HasClaim("permission", "servicetypes:read:customer")));
+
         options.AddPolicy("servicetypes:write", policy =>
             policy.RequireClaim("permission", "servicetypes:write"));
 

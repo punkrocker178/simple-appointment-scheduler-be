@@ -3,6 +3,7 @@ namespace Infrastructure.Appointments.Dtos;
 public class AvailabilitySlotDto
 {
     public int SecondsFromMidnight { get; init; }
+    public bool Available { get; init; }
 }
 
 public class AvailabilityResponse

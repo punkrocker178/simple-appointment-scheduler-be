@@ -11,57 +11,46 @@ public class AvailabilityEngineTests
     private static readonly Guid TechId = Guid.Parse("e5000001-0000-4000-8000-000000000001");
     private static readonly Guid BayId = Guid.Parse("f6000001-0000-4000-8000-000000000001");
 
-    [Fact]
-    public void GetAvailableSlots_GeneratesSlotsEveryThirtyMinutes()
-    {
-        var technicians = new List<AvailabilityTechnician>
-        {
-            new(TechId, "Alex", "Tech", new HashSet<Guid> { SkillId })
-        };
-        var bays = new List<AvailabilityBay> { new(BayId, "Bay 1") };
-
-        var slots = AvailabilityEngine.GetAvailableSlots(
+    private static IReadOnlyList<AvailabilitySlot> GetSlots(
+        int durationMinutes = 60,
+        IReadOnlyList<AvailabilityTechnician>? technicians = null,
+        IReadOnlyList<AvailabilityBay>? bays = null,
+        IReadOnlyList<ExistingAppointmentRecord>? appointments = null,
+        DateOnly? bookingDate = null,
+        DateTime? utcNow = null) =>
+        AvailabilityEngine.GetSlots(
             openSeconds: 28_800,
             closeSeconds: 61_200,
-            durationMinutes: 60,
+            durationMinutes,
             requiredSkillId: SkillId,
-            technicians,
-            bays,
-            appointments: [],
-            BookingDate,
-            UtcNow);
+            technicians ?? [new(TechId, "Alex", "Tech", new HashSet<Guid> { SkillId })],
+            bays ?? [new(BayId, "Bay 1")],
+            appointments ?? [],
+            bookingDate ?? BookingDate,
+            utcNow ?? UtcNow);
+
+    [Fact]
+    public void GetSlots_GeneratesSlotsEveryThirtyMinutes()
+    {
+        var slots = GetSlots();
 
         Assert.Equal(
             [28_800, 30_600, 32_400, 34_200, 36_000, 37_800, 39_600, 41_400, 43_200, 45_000, 46_800, 48_600, 50_400, 52_200, 54_000, 55_800, 57_600],
-            slots);
+            slots.Select(s => s.SecondsFromMidnight));
+        Assert.All(slots, s => Assert.True(s.Available));
     }
 
     [Fact]
-    public void GetAvailableSlots_ExcludesSlotSpanningPastClose()
+    public void GetSlots_ExcludesSlotSpanningPastClose()
     {
-        var technicians = new List<AvailabilityTechnician>
-        {
-            new(TechId, "Alex", "Tech", new HashSet<Guid> { SkillId })
-        };
-        var bays = new List<AvailabilityBay> { new(BayId, "Bay 1") };
+        var slots = GetSlots(durationMinutes: 120);
 
-        var slots = AvailabilityEngine.GetAvailableSlots(
-            openSeconds: 28_800,
-            closeSeconds: 61_200,
-            durationMinutes: 120,
-            requiredSkillId: SkillId,
-            technicians,
-            bays,
-            appointments: [],
-            BookingDate,
-            UtcNow);
-
-        Assert.DoesNotContain(55_800, slots);
-        Assert.Equal(54_000, slots[^1]);
+        Assert.DoesNotContain(slots, s => s.SecondsFromMidnight == 55_800);
+        Assert.Equal(54_000, slots[^1].SecondsFromMidnight);
     }
 
     [Fact]
-    public void GetAvailableSlots_NoQualifiedTechnicians_ReturnsEmpty()
+    public void GetSlots_NoQualifiedTechnicians_ReturnsAllSlotsUnavailable()
     {
         var technicians = new List<AvailabilityTechnician>
         {
@@ -69,28 +58,28 @@ public class AvailabilityEngineTests
         };
         var bays = new List<AvailabilityBay> { new(BayId, "Bay 1") };
 
-        var slots = AvailabilityEngine.GetAvailableSlots(
-            28_800, 61_200, 60, SkillId, technicians, bays, [], BookingDate, UtcNow);
+        var slots = GetSlots(technicians: technicians, bays: bays);
 
-        Assert.Empty(slots);
+        Assert.NotEmpty(slots);
+        Assert.All(slots, s => Assert.False(s.Available));
     }
 
     [Fact]
-    public void GetAvailableSlots_NoBays_ReturnsEmpty()
+    public void GetSlots_NoBays_ReturnsAllSlotsUnavailable()
     {
         var technicians = new List<AvailabilityTechnician>
         {
             new(TechId, "Alex", "Tech", new HashSet<Guid> { SkillId })
         };
 
-        var slots = AvailabilityEngine.GetAvailableSlots(
-            28_800, 61_200, 60, SkillId, technicians, [], [], BookingDate, UtcNow);
+        var slots = GetSlots(technicians: technicians, bays: []);
 
-        Assert.Empty(slots);
+        Assert.NotEmpty(slots);
+        Assert.All(slots, s => Assert.False(s.Available));
     }
 
     [Fact]
-    public void GetAvailableSlots_BlockedTechnician_RemovesOverlappingSlots()
+    public void GetSlots_BlockedTechnician_MarksOverlappingSlotsUnavailable()
     {
         var technicians = new List<AvailabilityTechnician>
         {
@@ -102,15 +91,14 @@ public class AvailabilityEngineTests
             new(TechId, BayId, 28_800, 3600, AppointmentStatus.Scheduled)
         };
 
-        var slots = AvailabilityEngine.GetAvailableSlots(
-            28_800, 61_200, 60, SkillId, technicians, bays, appointments, BookingDate, UtcNow);
+        var slots = GetSlots(appointments: appointments, technicians: technicians, bays: bays);
 
-        Assert.DoesNotContain(28_800, slots);
-        Assert.Contains(32_400, slots);
+        Assert.Contains(slots, s => s.SecondsFromMidnight == 28_800 && !s.Available);
+        Assert.Contains(slots, s => s.SecondsFromMidnight == 32_400 && s.Available);
     }
 
     [Fact]
-    public void GetAvailableSlots_RequiresBothTechnicianAndBayFree()
+    public void GetSlots_RequiresBothTechnicianAndBayFree()
     {
         var tech2Id = Guid.Parse("e5000001-0000-4000-8000-000000000002");
         var bay2Id = Guid.Parse("f6000001-0000-4000-8000-000000000002");
@@ -130,14 +118,13 @@ public class AvailabilityEngineTests
             new(tech2Id, bay2Id, 28_800, 3600, AppointmentStatus.Scheduled)
         };
 
-        var slots = AvailabilityEngine.GetAvailableSlots(
-            28_800, 61_200, 60, SkillId, technicians, bays, appointments, BookingDate, UtcNow);
+        var slots = GetSlots(appointments: appointments, technicians: technicians, bays: bays);
 
-        Assert.DoesNotContain(28_800, slots);
+        Assert.Contains(slots, s => s.SecondsFromMidnight == 28_800 && !s.Available);
     }
 
     [Fact]
-    public void GetAvailableSlots_ExcludesPastSlotsOnToday()
+    public void GetSlots_MarksPastSlotsUnavailableOnToday()
     {
         var today = DateOnly.FromDateTime(UtcNow);
         var laterToday = new DateTime(2026, 6, 17, 9, 0, 0, DateTimeKind.Utc);
@@ -147,11 +134,14 @@ public class AvailabilityEngineTests
         };
         var bays = new List<AvailabilityBay> { new(BayId, "Bay 1") };
 
-        var slots = AvailabilityEngine.GetAvailableSlots(
-            28_800, 61_200, 60, SkillId, technicians, bays, [], today, laterToday);
+        var slots = GetSlots(
+            technicians: technicians,
+            bays: bays,
+            bookingDate: today,
+            utcNow: laterToday);
 
-        Assert.DoesNotContain(28_800, slots);
-        Assert.Contains(32_400, slots);
+        Assert.Contains(slots, s => s.SecondsFromMidnight == 28_800 && !s.Available);
+        Assert.Contains(slots, s => s.SecondsFromMidnight == 32_400 && s.Available);
     }
 
     [Fact]

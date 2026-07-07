@@ -78,7 +78,7 @@ public class AvailabilityService : IAvailabilityService
                 a.Status))
             .ToListAsync(cancellationToken);
 
-        var slots = AvailabilityEngine.GetAvailableSlots(
+        var slots = AvailabilityEngine.GetSlots(
             dealership.OpenSecondsFromMidnight,
             dealership.CloseSecondsFromMidnight,
             serviceType.DurationMinutes,
@@ -94,7 +94,11 @@ public class AvailabilityService : IAvailabilityService
             BookingDate = bookingDate,
             ServiceTypeId = serviceTypeId,
             DurationMinutes = serviceType.DurationMinutes,
-            Slots = slots.Select(s => new AvailabilitySlotDto { SecondsFromMidnight = s }).ToList()
+            Slots = slots.Select(s => new AvailabilitySlotDto
+            {
+                SecondsFromMidnight = s.SecondsFromMidnight,
+                Available = s.Available
+            }).ToList()
         });
     }
 }

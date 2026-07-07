@@ -24,6 +24,7 @@ public static class AuthSeedData
         public static readonly Guid CustomersWrite = Guid.Parse("a1000001-0000-4000-8000-000000000010");
         public static readonly Guid VehiclesRead = Guid.Parse("a1000001-0000-4000-8000-000000000011");
         public static readonly Guid VehiclesWrite = Guid.Parse("a1000001-0000-4000-8000-000000000012");
+        public static readonly Guid ServiceTypesReadCustomer = Guid.Parse("a1000001-0000-4000-8000-000000000013");
     }
 
     public static class RoleIds
@@ -142,6 +143,12 @@ public static class AuthSeedData
             Id = PermissionIds.VehiclesWrite,
             Name = "vehicles:write",
             Description = "Create, update, and delete vehicles (admin and staff)"
+        },
+        new Permission
+        {
+            Id = PermissionIds.ServiceTypesReadCustomer,
+            Name = "servicetypes:read:customer",
+            Description = "View service types as a customer"
         }
     ];
 
@@ -194,6 +201,7 @@ public static class AuthSeedData
         new RolePermission { RoleId = RoleIds.Staff, PermissionId = PermissionIds.AppointmentsRead },
         new RolePermission { RoleId = RoleIds.Staff, PermissionId = PermissionIds.AppointmentsWrite },
         new RolePermission { RoleId = RoleIds.User, PermissionId = PermissionIds.AppointmentsReadOwn },
-        new RolePermission { RoleId = RoleIds.User, PermissionId = PermissionIds.AppointmentsWrite }
+        new RolePermission { RoleId = RoleIds.User, PermissionId = PermissionIds.AppointmentsWrite },
+        new RolePermission { RoleId = RoleIds.User, PermissionId = PermissionIds.ServiceTypesReadCustomer }
     ];
 }

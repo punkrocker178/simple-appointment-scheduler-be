@@ -15,7 +15,7 @@ public class AvailabilityControllerTests
         BookingDate = new DateOnly(2026, 6, 17),
         ServiceTypeId = Guid.Parse("c9000001-0000-4000-8000-000000000001"),
         DurationMinutes = 60,
-        Slots = [new AvailabilitySlotDto { SecondsFromMidnight = 28_800 }]
+        Slots = [new AvailabilitySlotDto { SecondsFromMidnight = 28_800, Available = true }]
     };
 
     [Fact]
