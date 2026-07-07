@@ -3,8 +3,8 @@ using Infrastructure.Common;
 
 namespace Infrastructure.Services;
 
-public interface IBookingCatalogService
+public interface IDefaultDealershipService
 {
-    Task<ServiceResult<BookingCatalogResponse>> GetCatalogAsync(
+    Task<ServiceResult<DefaultDealershipResponse>> GetDefaultDealershipAsync(
         CancellationToken cancellationToken = default);
 }

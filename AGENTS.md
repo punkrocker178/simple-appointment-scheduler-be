@@ -260,7 +260,8 @@ Non-secret defaults live in `appsettings.json` (`Jwt:Issuer`, `Jwt:Audience`, `A
 - **Customer CRUD** implemented — `GET/POST/PUT /api/customers` with `customers:read` / `customers:write` (Admin + Staff)
 - **Vehicle CRUD** implemented — nested under `/api/customers/{id}/vehicles` with `vehicles:read` / `vehicles:write` (Admin + Staff)
 - **Appointment Booking (Phase 4)** — `GET /api/availability`, `POST /api/appointments`, `GET /api/appointments/{id}`, `GET /api/customers/{id}/appointments`, `GET /api/dealerships/{id}/appointments?date=` (`AvailabilityEngine`, `AvailabilityService`, `AppointmentService`)
-- Unit test project with **132 tests** (`universal-scheduler-be.Tests`)
+- **Customer self-service (F7)** — `User.CustomerId` link; `GET/PUT /api/me/customer`, `GET/POST/PUT /api/me/vehicles`, `GET /api/me/appointments`; `GET /api/booking/dealership` (default dealership); `servicetypes:read:customer` for service-type catalog; appointment ownership on create/read
+- Unit test project with **155 tests** (`universal-scheduler-be.Tests`)
 - VS Code debug config for .NET 10 (`.vscode/launch.json`)
 - Cursor rule `.cursor/rules/agents-md.mdc` points agents to this file each session
 - Session notes: [reflections/2026-06-11_dealership_crud.md](reflections/2026-06-11_dealership_crud.md)
