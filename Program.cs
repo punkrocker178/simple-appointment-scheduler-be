@@ -51,7 +51,7 @@ builder.Services.AddScoped<IVehicleService, VehicleService>();
 builder.Services.AddScoped<IAvailabilityService, AvailabilityService>();
 builder.Services.AddScoped<IAppointmentService, AppointmentService>();
 builder.Services.AddScoped<IMeService, MeService>();
-builder.Services.AddScoped<IBookingCatalogService, BookingCatalogService>();
+builder.Services.AddScoped<IDefaultDealershipService, DefaultDealershipService>();
 builder.Services.AddSingleton<IAppointmentCallerResolver, AppointmentCallerResolver>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();

@@ -11,20 +11,20 @@ namespace universal_scheduler_be.Controllers;
 [Authorize]
 public class BookingController : ControllerBase
 {
-    private readonly IBookingCatalogService _bookingCatalogService;
+    private readonly IDefaultDealershipService _defaultDealershipService;
 
-    public BookingController(IBookingCatalogService bookingCatalogService)
+    public BookingController(IDefaultDealershipService defaultDealershipService)
     {
-        _bookingCatalogService = bookingCatalogService;
+        _defaultDealershipService = defaultDealershipService;
     }
 
-    [HttpGet("catalog")]
-    [ProducesResponseType(typeof(BookingCatalogResponse), StatusCodes.Status200OK)]
+    [HttpGet("dealership")]
+    [ProducesResponseType(typeof(DefaultDealershipResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> GetCatalog(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetDefaultDealership(CancellationToken cancellationToken)
     {
-        var result = await _bookingCatalogService.GetCatalogAsync(cancellationToken);
+        var result = await _defaultDealershipService.GetDefaultDealershipAsync(cancellationToken);
         return ToActionResult(result);
     }
 

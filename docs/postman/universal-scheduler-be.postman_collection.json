@@ -597,14 +597,14 @@
     },
     {
       "name": "Booking",
-      "description": "BookingController — public booking catalog for frontend",
+      "description": "BookingController — default dealership for customer booking",
       "item": [
         {
-          "name": "Get Booking Catalog",
+          "name": "Get Default Dealership",
           "request": {
             "method": "GET",
-            "url": "{{baseUrl}}/api/booking/catalog",
-            "description": "Returns dealership and active service types for customer booking flow."
+            "url": "{{baseUrl}}/api/booking/dealership",
+            "description": "Returns the default dealership id and name for customer booking flow."
           },
           "response": []
         }
