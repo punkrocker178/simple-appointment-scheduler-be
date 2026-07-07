@@ -33,6 +33,11 @@ public class JwtTokenService : IJwtTokenService
             new(ClaimTypes.Role, user.Role.Name)
         };
 
+        if (user.CustomerId is Guid customerId)
+        {
+            claims.Add(new Claim(AuthClaimTypes.CustomerId, customerId.ToString()));
+        }
+
         claims.AddRange(permissions.Select(p => new Claim("permission", p)));
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_options.Key));

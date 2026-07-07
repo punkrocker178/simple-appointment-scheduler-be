@@ -35,7 +35,7 @@ public class AppointmentController : ControllerBase
         [FromBody] CreateAppointmentRequest request,
         CancellationToken cancellationToken)
     {
-        var caller = await _callerResolver.ResolveAsync(User, cancellationToken);
+        var caller = _callerResolver.Resolve(User);
         if (caller is null)
         {
             return Unauthorized();
@@ -58,7 +58,7 @@ public class AppointmentController : ControllerBase
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
     {
-        var caller = await _callerResolver.ResolveAsync(User, cancellationToken);
+        var caller = _callerResolver.Resolve(User);
         if (caller is null)
         {
             return Unauthorized();

@@ -53,6 +53,35 @@ public class JwtTokenServiceTests
     }
 
     [Fact]
+    public void CreateToken_WithLinkedCustomer_IncludesCustomerIdClaim()
+    {
+        var options = Options.Create(AuthTestData.CreateJwtOptions());
+        var service = new JwtTokenService(options);
+        var customerId = Guid.NewGuid();
+        var user = CreateUser();
+        user.CustomerId = customerId;
+
+        var response = service.CreateToken(user, ["appointments:read:own"]);
+
+        var jwt = new JwtSecurityTokenHandler().ReadJwtToken(response.Token);
+        Assert.Contains(
+            jwt.Claims,
+            claim => claim.Type == AuthClaimTypes.CustomerId && claim.Value == customerId.ToString());
+    }
+
+    [Fact]
+    public void CreateToken_WithoutLinkedCustomer_OmitsCustomerIdClaim()
+    {
+        var options = Options.Create(AuthTestData.CreateJwtOptions());
+        var service = new JwtTokenService(options);
+
+        var response = service.CreateToken(CreateUser(), ["appointments:read:own"]);
+
+        var jwt = new JwtSecurityTokenHandler().ReadJwtToken(response.Token);
+        Assert.DoesNotContain(jwt.Claims, claim => claim.Type == AuthClaimTypes.CustomerId);
+    }
+
+    [Fact]
     public void CreateToken_WhenKeyMissing_ThrowsInvalidOperationException()
     {
         var options = Options.Create(new JwtOptions

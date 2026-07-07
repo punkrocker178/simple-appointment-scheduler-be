@@ -45,8 +45,8 @@ public class AppointmentControllerTests
 
         var callerResolver = new Mock<IAppointmentCallerResolver>();
         callerResolver
-            .Setup(resolver => resolver.ResolveAsync(It.IsAny<System.Security.Claims.ClaimsPrincipal>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Caller);
+            .Setup(resolver => resolver.Resolve(It.IsAny<System.Security.Claims.ClaimsPrincipal>()))
+            .Returns(Caller);
 
         var controller = new AppointmentController(appointmentService.Object, callerResolver.Object);
 
@@ -70,8 +70,8 @@ public class AppointmentControllerTests
 
         var callerResolver = new Mock<IAppointmentCallerResolver>();
         callerResolver
-            .Setup(resolver => resolver.ResolveAsync(It.IsAny<System.Security.Claims.ClaimsPrincipal>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Caller);
+            .Setup(resolver => resolver.Resolve(It.IsAny<System.Security.Claims.ClaimsPrincipal>()))
+            .Returns(Caller);
 
         var controller = new AppointmentController(appointmentService.Object, callerResolver.Object);
 
@@ -94,8 +94,8 @@ public class AppointmentControllerTests
 
         var callerResolver = new Mock<IAppointmentCallerResolver>();
         callerResolver
-            .Setup(resolver => resolver.ResolveAsync(It.IsAny<System.Security.Claims.ClaimsPrincipal>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Caller);
+            .Setup(resolver => resolver.Resolve(It.IsAny<System.Security.Claims.ClaimsPrincipal>()))
+            .Returns(Caller);
 
         var controller = new AppointmentController(appointmentService.Object, callerResolver.Object);
 
