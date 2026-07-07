@@ -1,5 +1,6 @@
 using Infrastructure.Appointments;
 using Infrastructure.Appointments.Dtos;
+using Infrastructure.Auth;
 using Infrastructure.Common;
 using Infrastructure.Data;
 using Infrastructure.Entities;
@@ -20,8 +21,23 @@ public class AppointmentService : IAppointmentService
 
     public async Task<ServiceResult<AppointmentResponse>> CreateAsync(
         CreateAppointmentRequest request,
+        AppointmentCallerContext caller,
         CancellationToken cancellationToken = default)
     {
+        if (caller.Role == "User")
+        {
+            if (caller.CustomerId is null)
+            {
+                return ServiceResult<AppointmentResponse>.NotFound("Customer profile not found.");
+            }
+
+            if (request.CustomerId != caller.CustomerId)
+            {
+                return ServiceResult<AppointmentResponse>.Forbidden(
+                    "You can only book appointments for your own customer profile.");
+            }
+        }
+
         var customer = await _db.Customers
             .AsNoTracking()
             .FirstOrDefaultAsync(c => c.Id == request.CustomerId, cancellationToken);
@@ -175,6 +191,7 @@ public class AppointmentService : IAppointmentService
 
     public async Task<ServiceResult<AppointmentResponse>> GetByIdAsync(
         Guid id,
+        AppointmentCallerContext caller,
         CancellationToken cancellationToken = default)
     {
         var appointment = await _db.Appointments
@@ -185,6 +202,15 @@ public class AppointmentService : IAppointmentService
         if (appointment is null)
         {
             return ServiceResult<AppointmentResponse>.NotFound("Appointment not found.");
+        }
+
+        if (!caller.CanReadAllAppointments)
+        {
+            if (!caller.CanReadOwnAppointments || caller.CustomerId != appointment.CustomerId)
+            {
+                return ServiceResult<AppointmentResponse>.Forbidden(
+                    "You do not have permission to view this appointment.");
+            }
         }
 
         return ServiceResult<AppointmentResponse>.Ok(ToResponse(appointment, appointment.ServiceType.DurationMinutes));

@@ -1,0 +1,614 @@
+{
+  "info": {
+    "_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "name": "Universal Scheduler BE",
+    "description": "API collection for the Universal Appointment Scheduler backend.\n\nDerived from controller tests in `universal-scheduler-be.Tests/Controllers/` and `universal-scheduler-be.http`.\n\n## Setup\n1. Run the API: `dotnet run` (default HTTP: http://localhost:5210)\n2. Set `AdminSeed:Password` in User Secrets for admin login\n3. Run **Auth → Login (Admin)** — the test script saves `token` automatically\n4. Replace collection variables with real IDs from create responses as needed\n\n## Permissions\n- Admin: dealerships, skills, service types, bays, technicians\n- Admin/Staff: customers, vehicles, appointments (read all)\n- User: appointments:read:own, appointments:write, /api/me/*",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5210" },
+    { "key": "token", "value": "" },
+    { "key": "dealershipId", "value": "c3000001-0000-4000-8000-000000000001" },
+    { "key": "skillId", "value": "d4000001-0000-4000-8000-000000000001" },
+    { "key": "serviceTypeId", "value": "c9000001-0000-4000-8000-000000000001" },
+    { "key": "serviceBayId", "value": "f6000001-0000-4000-8000-000000000001" },
+    { "key": "technicianId", "value": "f7000001-0000-4000-8000-000000000001" },
+    { "key": "customerId", "value": "a7000001-0000-4000-8000-000000000001" },
+    { "key": "vehicleId", "value": "b8000001-0000-4000-8000-000000000001" },
+    { "key": "appointmentId", "value": "a1000001-0000-4000-8000-000000000099" },
+    { "key": "bookingDate", "value": "2026-06-17" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "description": "AuthController — register, login, current user profile",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"Password123!\",\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Doe\"\n}"
+            },
+            "url": "{{baseUrl}}/api/auth/register",
+            "description": "Open registration — always assigns User role. Returns 201 Created or 409 Conflict if email exists."
+          },
+          "response": []
+        },
+        {
+          "name": "Login (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const json = pm.response.json();",
+                  "    pm.collectionVariables.set('token', json.token);",
+                  "    pm.test('Token saved to collection variable', () => {",
+                  "        pm.expect(json.token).to.be.a('string').and.not.empty;",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@localhost\",\n  \"password\": \"ChangeMe123!\"\n}"
+            },
+            "url": "{{baseUrl}}/api/auth/login",
+            "description": "Admin login. Set AdminSeed:Password in User Secrets. Test script saves JWT to `token` variable."
+          },
+          "response": []
+        },
+        {
+          "name": "Login (User)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    pm.collectionVariables.set('token', pm.response.json().token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"Password123!\"\n}"
+            },
+            "url": "{{baseUrl}}/api/auth/login"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Current User (Me)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/auth/me",
+            "description": "Returns UserId, Email, Role, CustomerId, Permissions from JWT claims."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Dealerships",
+      "description": "DealershipController — requires dealerships:read / dealerships:write (Admin only)",
+      "item": [
+        {
+          "name": "List Dealerships",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/dealerships"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Dealership by ID",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/dealerships/{{dealershipId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Dealership",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Downtown Auto\",\n  \"address\": \"123 Main St, Austin, TX 78701\",\n  \"phone\": \"+1-512-555-0100\",\n  \"timezone\": \"America/Chicago\",\n  \"openSecondsFromMidnight\": 28800,\n  \"closeSecondsFromMidnight\": 61200\n}"
+            },
+            "url": "{{baseUrl}}/api/dealerships"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Dealership",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Downtown Auto — Updated\",\n  \"address\": \"456 Congress Ave, Austin, TX 78701\",\n  \"phone\": \"+1-512-555-0199\",\n  \"timezone\": \"America/Chicago\",\n  \"openSecondsFromMidnight\": 28800,\n  \"closeSecondsFromMidnight\": 61200\n}"
+            },
+            "url": "{{baseUrl}}/api/dealerships/{{dealershipId}}"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Skills",
+      "description": "SkillController — requires skills:read / skills:write (Admin only)",
+      "item": [
+        {
+          "name": "List Skills",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/skills"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Skill",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Brakes\",\n  \"description\": \"Brake repair and maintenance\"\n}"
+            },
+            "url": "{{baseUrl}}/api/skills"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Skill",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/skills/{{skillId}}",
+            "description": "Returns 204 No Content or 409 Conflict if skill is in use."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Service Types",
+      "description": "ServiceTypeController — nested under dealership; requires servicetypes:read / servicetypes:write",
+      "item": [
+        {
+          "name": "List Service Types",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/dealerships/{{dealershipId}}/service-types"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Service Type",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"skillId\": \"{{skillId}}\",\n  \"name\": \"Brake Pad Replacement\",\n  \"description\": \"Front brake pad replacement\",\n  \"durationMinutes\": 60,\n  \"price\": 149.99\n}"
+            },
+            "url": "{{baseUrl}}/api/dealerships/{{dealershipId}}/service-types"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Service Type",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"skillId\": \"{{skillId}}\",\n  \"name\": \"Brake Pad Replacement — Premium\",\n  \"description\": \"Front brake pad replacement with premium pads\",\n  \"durationMinutes\": 75,\n  \"price\": 179.99\n}"
+            },
+            "url": "{{baseUrl}}/api/dealerships/{{dealershipId}}/service-types/{{serviceTypeId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Deactivate Service Type",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/dealerships/{{dealershipId}}/service-types/{{serviceTypeId}}",
+            "description": "Soft delete — returns 204 No Content."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Service Bays",
+      "description": "ServiceBayController — nested under dealership; requires servicebays:read / servicebays:write",
+      "item": [
+        {
+          "name": "List Service Bays",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/dealerships/{{dealershipId}}/service-bays"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Service Bay",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Bay 1\"\n}"
+            },
+            "url": "{{baseUrl}}/api/dealerships/{{dealershipId}}/service-bays"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Service Bay",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Bay 1 — Express Lane\"\n}"
+            },
+            "url": "{{baseUrl}}/api/dealerships/{{dealershipId}}/service-bays/{{serviceBayId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Deactivate Service Bay",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/dealerships/{{dealershipId}}/service-bays/{{serviceBayId}}",
+            "description": "Soft delete — returns 204 No Content."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Technicians",
+      "description": "TechnicianController — nested under dealership; requires technicians:read / technicians:write",
+      "item": [
+        {
+          "name": "List Technicians",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/dealerships/{{dealershipId}}/technicians"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Technician",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Alex\",\n  \"lastName\": \"Rivera\",\n  \"skillIds\": [\"{{skillId}}\"]\n}"
+            },
+            "url": "{{baseUrl}}/api/dealerships/{{dealershipId}}/technicians"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Technician",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Alex\",\n  \"lastName\": \"Rivera-Smith\",\n  \"skillIds\": [\"{{skillId}}\"]\n}"
+            },
+            "url": "{{baseUrl}}/api/dealerships/{{dealershipId}}/technicians/{{technicianId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Deactivate Technician",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/dealerships/{{dealershipId}}/technicians/{{technicianId}}",
+            "description": "Soft delete — returns 204 No Content."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Customers",
+      "description": "CustomerController — requires customers:read / customers:write (Admin + Staff)",
+      "item": [
+        {
+          "name": "List Customers",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/customers"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Customer by ID",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/customers/{{customerId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Customer",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Doe\",\n  \"email\": \"jane.doe@example.com\",\n  \"phone\": \"+1-512-555-0200\"\n}"
+            },
+            "url": "{{baseUrl}}/api/customers"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Customer",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Doe-Smith\",\n  \"email\": \"jane.doe@example.com\",\n  \"phone\": \"+1-512-555-0201\"\n}"
+            },
+            "url": "{{baseUrl}}/api/customers/{{customerId}}"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Vehicles",
+      "description": "VehicleController — nested under customer; requires vehicles:read / vehicles:write",
+      "item": [
+        {
+          "name": "List Vehicles for Customer",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/customers/{{customerId}}/vehicles"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Vehicle",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"make\": \"Toyota\",\n  \"model\": \"Camry\",\n  \"year\": 2022\n}"
+            },
+            "url": "{{baseUrl}}/api/customers/{{customerId}}/vehicles"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Vehicle",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"make\": \"Toyota\",\n  \"model\": \"Camry SE\",\n  \"year\": 2022\n}"
+            },
+            "url": "{{baseUrl}}/api/customers/{{customerId}}/vehicles/{{vehicleId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Vehicle",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/customers/{{customerId}}/vehicles/{{vehicleId}}",
+            "description": "Returns 204 No Content."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Availability",
+      "description": "AvailabilityController — any authenticated user; date must be yyyy-MM-dd",
+      "item": [
+        {
+          "name": "Check Availability",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/availability?dealershipId={{dealershipId}}&serviceTypeId={{serviceTypeId}}&date={{bookingDate}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "availability"],
+              "query": [
+                { "key": "dealershipId", "value": "{{dealershipId}}" },
+                { "key": "serviceTypeId", "value": "{{serviceTypeId}}" },
+                { "key": "date", "value": "{{bookingDate}}", "description": "Format: yyyy-MM-dd (e.g. 2026-06-17)" }
+              ]
+            },
+            "description": "Returns available time slots for a service type on a given date."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Appointments",
+      "description": "AppointmentController — requires appointments:write / appointments:read / appointments:read:any",
+      "item": [
+        {
+          "name": "Book Appointment",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerId\": \"{{customerId}}\",\n  \"vehicleId\": \"{{vehicleId}}\",\n  \"serviceTypeId\": \"{{serviceTypeId}}\",\n  \"bookingDate\": \"{{bookingDate}}\",\n  \"secondsFromMidnight\": 28800\n}"
+            },
+            "url": "{{baseUrl}}/api/appointments",
+            "description": "Requires appointments:write. Returns 201 Created or 409 Conflict if slot unavailable."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Appointment by ID",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/appointments/{{appointmentId}}",
+            "description": "Requires appointments:read:any."
+          },
+          "response": []
+        },
+        {
+          "name": "List Customer Appointments",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/customers/{{customerId}}/appointments",
+            "description": "Requires appointments:read."
+          },
+          "response": []
+        },
+        {
+          "name": "Daily Dealership Schedule",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/dealerships/{{dealershipId}}/appointments?date={{bookingDate}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "dealerships", "{{dealershipId}}", "appointments"],
+              "query": [
+                { "key": "date", "value": "{{bookingDate}}", "description": "Format: yyyy-MM-dd" }
+              ]
+            },
+            "description": "Requires appointments:read. Returns 400 Bad Request for invalid date format."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Me (Self-Service)",
+      "description": "MeController — authenticated user's own customer profile, vehicles, and appointments",
+      "item": [
+        {
+          "name": "Get My Customer Profile",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/me/customer"
+          },
+          "response": []
+        },
+        {
+          "name": "Update My Customer Profile",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"+1-512-555-0300\"\n}"
+            },
+            "url": "{{baseUrl}}/api/me/customer"
+          },
+          "response": []
+        },
+        {
+          "name": "List My Vehicles",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/me/vehicles"
+          },
+          "response": []
+        },
+        {
+          "name": "Create My Vehicle",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"make\": \"Honda\",\n  \"model\": \"Civic\",\n  \"year\": 2023\n}"
+            },
+            "url": "{{baseUrl}}/api/me/vehicles"
+          },
+          "response": []
+        },
+        {
+          "name": "Update My Vehicle",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"make\": \"Honda\",\n  \"model\": \"Civic Sport\",\n  \"year\": 2023\n}"
+            },
+            "url": "{{baseUrl}}/api/me/vehicles/{{vehicleId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "List My Appointments",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/me/appointments",
+            "description": "Requires appointments:read:own policy."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Booking",
+      "description": "BookingController — public booking catalog for frontend",
+      "item": [
+        {
+          "name": "Get Booking Catalog",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/booking/catalog",
+            "description": "Returns dealership and active service types for customer booking flow."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

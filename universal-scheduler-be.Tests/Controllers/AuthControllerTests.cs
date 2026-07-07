@@ -24,7 +24,7 @@ public class AuthControllerTests
             .Setup(service => service.RegisterAsync(It.IsAny<RegisterRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(AuthResult.Created(response));
 
-        var controller = new AuthController(authService.Object);
+        var controller = new AuthController(authService.Object, Mock.Of<IUserCustomerResolver>());
         var request = new RegisterRequest
         {
             Email = "user@example.com",
@@ -55,7 +55,7 @@ public class AuthControllerTests
             .Setup(service => service.LoginAsync(It.IsAny<LoginRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(AuthResult.Success(response));
 
-        var controller = new AuthController(authService.Object);
+        var controller = new AuthController(authService.Object, Mock.Of<IUserCustomerResolver>());
 
         var actionResult = await controller.Login(
             new LoginRequest { Email = "user@example.com", Password = "password123" },
@@ -74,7 +74,7 @@ public class AuthControllerTests
             .Setup(service => service.RegisterAsync(It.IsAny<RegisterRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(AuthResult.Conflict("A user with this email already exists."));
 
-        var controller = new AuthController(authService.Object);
+        var controller = new AuthController(authService.Object, Mock.Of<IUserCustomerResolver>());
 
         var actionResult = await controller.Register(new RegisterRequest(), CancellationToken.None);
 
@@ -86,9 +86,10 @@ public class AuthControllerTests
     }
 
     [Fact]
-    public void Me_ReturnsClaimsFromAuthenticatedUser()
+    public async Task Me_ReturnsClaimsFromAuthenticatedUser()
     {
         var userId = Guid.NewGuid();
+        var customerId = Guid.NewGuid();
         var claims = new[]
         {
             new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
@@ -98,7 +99,11 @@ public class AuthControllerTests
             new Claim("permission", "appointments:write")
         };
         var identity = new ClaimsIdentity(claims, "TestAuth");
-        var controller = new AuthController(Mock.Of<IAuthService>())
+        var userCustomerResolver = new Mock<IUserCustomerResolver>();
+        userCustomerResolver
+            .Setup(resolver => resolver.GetCustomerIdAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(customerId);
+        var controller = new AuthController(Mock.Of<IAuthService>(), userCustomerResolver.Object)
         {
             ControllerContext = new ControllerContext
             {
@@ -109,7 +114,7 @@ public class AuthControllerTests
             }
         };
 
-        var actionResult = controller.Me();
+        var actionResult = await controller.Me(CancellationToken.None);
 
         var okResult = Assert.IsType<OkObjectResult>(actionResult);
         Assert.NotNull(okResult.Value);
@@ -118,6 +123,7 @@ public class AuthControllerTests
         Assert.Equal(userId.ToString(), payloadType.GetProperty("UserId")?.GetValue(okResult.Value));
         Assert.Equal("user@example.com", payloadType.GetProperty("Email")?.GetValue(okResult.Value));
         Assert.Equal("User", payloadType.GetProperty("Role")?.GetValue(okResult.Value));
+        Assert.Equal(customerId, payloadType.GetProperty("CustomerId")?.GetValue(okResult.Value));
 
         var permissions = Assert.IsType<string[]>(payloadType.GetProperty("Permissions")?.GetValue(okResult.Value));
         Assert.Equal(["appointments:read:own", "appointments:write"], permissions);

@@ -12,10 +12,12 @@ namespace universal_scheduler_be.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
+    private readonly IUserCustomerResolver _userCustomerResolver;
 
-    public AuthController(IAuthService authService)
+    public AuthController(IAuthService authService, IUserCustomerResolver userCustomerResolver)
     {
         _authService = authService;
+        _userCustomerResolver = userCustomerResolver;
     }
 
     [HttpPost("register")]
@@ -46,18 +48,27 @@ public class AuthController : ControllerBase
     [Authorize]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public IActionResult Me()
+    public async Task<IActionResult> Me(CancellationToken cancellationToken)
     {
         var user = User;
+        var userIdValue = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? user.FindFirstValue("sub");
+        Guid? customerId = null;
+
+        if (Guid.TryParse(userIdValue, out var userId))
+        {
+            customerId = await _userCustomerResolver.GetCustomerIdAsync(userId, cancellationToken);
+        }
+
         var claims = user.Claims
             .Select(c => new { c.Type, c.Value })
             .ToArray();
 
         return Ok(new
         {
-            UserId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? user.FindFirstValue("sub"),
+            UserId = userIdValue,
             Email = user.FindFirstValue(ClaimTypes.Email) ?? user.FindFirstValue("email"),
             Role = user.FindFirstValue(ClaimTypes.Role),
+            CustomerId = customerId,
             Permissions = user.FindAll("permission").Select(c => c.Value).ToArray(),
             Claims = claims
         });
