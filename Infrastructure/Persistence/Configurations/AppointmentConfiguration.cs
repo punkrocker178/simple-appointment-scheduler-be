@@ -23,10 +23,7 @@ public class AppointmentConfiguration : IEntityTypeConfiguration<Appointment>
         builder.Property(a => a.StartedAtUtc)
             .HasColumnType("timestamp with time zone");
 
-        builder.Property(a => a.CompletedAtUtc)
-            .HasColumnType("timestamp with time zone");
-
-        builder.Property(a => a.CancelledAtUtc)
+        builder.Property(a => a.ClosedAtUtc)
             .HasColumnType("timestamp with time zone");
 
         builder.HasIndex(a => new { a.BookingDate, a.TechnicianId });

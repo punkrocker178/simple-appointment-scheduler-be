@@ -311,7 +311,7 @@ public class AppointmentService : IAppointmentService
         }
         else if (request.Status == AppointmentStatus.Completed)
         {
-            appointment.CompletedAtUtc = utcNow;
+            appointment.ClosedAtUtc = utcNow;
         }
 
         await _db.SaveChangesAsync(cancellationToken);
@@ -385,7 +385,7 @@ public class AppointmentService : IAppointmentService
 
         appointment.Status = AppointmentStatus.Cancelled;
         appointment.CancellationReason = request.Reason.Trim();
-        appointment.CancelledAtUtc = _timeProvider.GetUtcNow().UtcDateTime;
+        appointment.ClosedAtUtc = _timeProvider.GetUtcNow().UtcDateTime;
 
         await _db.SaveChangesAsync(cancellationToken);
 
@@ -408,7 +408,6 @@ public class AppointmentService : IAppointmentService
             Status = appointment.Status,
             CancellationReason = appointment.CancellationReason,
             StartedAtUtc = appointment.StartedAtUtc,
-            CompletedAtUtc = appointment.CompletedAtUtc,
-            CancelledAtUtc = appointment.CancelledAtUtc
+            ClosedAtUtc = appointment.ClosedAtUtc
         };
 }

@@ -121,7 +121,7 @@ See [PHASE_4_APPOINTMENT_BOOKING_PLAN.md](./PHASE_4_APPOINTMENT_BOOKING_PLAN.md)
 
 **Schema changes (`AddAppointmentLifecycleFields` migration):**
 
-- `Appointment.CancellationReason`, `StartedAtUtc`, `CompletedAtUtc`, `CancelledAtUtc`
+- `Appointment.CancellationReason`, `StartedAtUtc`, `ClosedAtUtc`
 - `AppointmentStatusTransitions` + `AppointmentLifecycleRules` (2-hour customer cancel cutoff; staff override)
 
 See [PHASE_5_APPOINTMENT_LIFECYCLE_PLAN.md](./PHASE_5_APPOINTMENT_LIFECYCLE_PLAN.md) for design details.

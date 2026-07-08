@@ -16,6 +16,5 @@ public class AppointmentResponse
     public AppointmentStatus Status { get; init; }
     public string? CancellationReason { get; init; }
     public DateTime? StartedAtUtc { get; init; }
-    public DateTime? CompletedAtUtc { get; init; }
-    public DateTime? CancelledAtUtc { get; init; }
+    public DateTime? ClosedAtUtc { get; init; }
 }

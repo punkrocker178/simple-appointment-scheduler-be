@@ -27,7 +27,7 @@
 Migration `AddAppointmentLifecycleFields` adds:
 
 - `CancellationReason` (varchar 500)
-- `StartedAtUtc`, `CompletedAtUtc`, `CancelledAtUtc` (timestamptz)
+- `StartedAtUtc`, `ClosedAtUtc` (timestamptz) — `ClosedAtUtc` set when status becomes `Completed` or `Cancelled`
 
 ## Key files
 

@@ -409,7 +409,7 @@ public class AppointmentServiceTests
 
         Assert.Equal(StatusCodes.Status200OK, result.StatusCode);
         Assert.Equal(AppointmentStatus.Completed, result.Data?.Status);
-        Assert.NotNull(result.Data?.CompletedAtUtc);
+        Assert.NotNull(result.Data?.ClosedAtUtc);
     }
 
     [Fact]
@@ -462,6 +462,7 @@ public class AppointmentServiceTests
         Assert.Equal(StatusCodes.Status200OK, result.StatusCode);
         Assert.Equal(AppointmentStatus.Cancelled, result.Data?.Status);
         Assert.Equal("Plans changed", result.Data?.CancellationReason);
+        Assert.NotNull(result.Data?.ClosedAtUtc);
     }
 
     [Fact]
