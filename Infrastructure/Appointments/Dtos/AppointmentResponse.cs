@@ -14,4 +14,7 @@ public class AppointmentResponse
     public int SecondsFromMidnight { get; init; }
     public int DurationMinutes { get; init; }
     public AppointmentStatus Status { get; init; }
+    public string? CancellationReason { get; init; }
+    public DateTime? StartedAtUtc { get; init; }
+    public DateTime? ClosedAtUtc { get; init; }
 }

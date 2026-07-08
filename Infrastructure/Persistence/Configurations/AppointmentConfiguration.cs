@@ -17,6 +17,15 @@ public class AppointmentConfiguration : IEntityTypeConfiguration<Appointment>
             .HasConversion<int>()
             .HasDefaultValue(AppointmentStatus.Scheduled);
 
+        builder.Property(a => a.CancellationReason)
+            .HasMaxLength(500);
+
+        builder.Property(a => a.StartedAtUtc)
+            .HasColumnType("timestamp with time zone");
+
+        builder.Property(a => a.ClosedAtUtc)
+            .HasColumnType("timestamp with time zone");
+
         builder.HasIndex(a => new { a.BookingDate, a.TechnicianId });
         builder.HasIndex(a => new { a.BookingDate, a.ServiceBayId });
 

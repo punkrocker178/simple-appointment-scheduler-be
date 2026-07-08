@@ -341,3 +341,36 @@ GET {{universal_scheduler_be_HostAddress}}/api/dealerships/{{dealershipId}}/appo
 Authorization: Bearer {{token}}
 
 ###
+
+### Start appointment — Scheduled → InProgress (requires appointments:write, Staff/Admin)
+PATCH {{universal_scheduler_be_HostAddress}}/api/appointments/{{appointmentId}}/status
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "status": 1
+}
+
+###
+
+### Complete appointment — InProgress → Completed (requires appointments:write, Staff/Admin)
+PATCH {{universal_scheduler_be_HostAddress}}/api/appointments/{{appointmentId}}/status
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "status": 2
+}
+
+###
+
+### Cancel appointment (requires appointments:write)
+POST {{universal_scheduler_be_HostAddress}}/api/appointments/{{appointmentId}}/cancel
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "reason": "Customer requested cancellation"
+}
+
+###

@@ -144,6 +144,35 @@ public class AvailabilityEngineTests
         Assert.Contains(slots, s => s.SecondsFromMidnight == 32_400 && s.Available);
     }
 
+    [Theory]
+    [InlineData(AppointmentStatus.Cancelled)]
+    [InlineData(AppointmentStatus.Completed)]
+    public void GetSlots_TerminalStatuses_DoNotBlockSlots(AppointmentStatus status)
+    {
+        var technicians = new List<AvailabilityTechnician>
+        {
+            new(TechId, "Alex", "Tech", new HashSet<Guid> { SkillId })
+        };
+        var bays = new List<AvailabilityBay> { new(BayId, "Bay 1") };
+        var appointments = new List<ExistingAppointmentRecord>
+        {
+            new(TechId, BayId, 28_800, 3600, status)
+        };
+
+        var slots = GetSlots(appointments: appointments, technicians: technicians, bays: bays);
+
+        Assert.All(slots, s => Assert.True(s.Available));
+    }
+
+    [Fact]
+    public void IsBlockingStatus_OnlyScheduledAndInProgressAreBlocking()
+    {
+        Assert.True(AvailabilityEngine.IsBlockingStatus(AppointmentStatus.Scheduled));
+        Assert.True(AvailabilityEngine.IsBlockingStatus(AppointmentStatus.InProgress));
+        Assert.False(AvailabilityEngine.IsBlockingStatus(AppointmentStatus.Completed));
+        Assert.False(AvailabilityEngine.IsBlockingStatus(AppointmentStatus.Cancelled));
+    }
+
     [Fact]
     public void IntervalsOverlap_DetectsPartialOverlap()
     {

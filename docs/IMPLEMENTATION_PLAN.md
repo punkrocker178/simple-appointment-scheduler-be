@@ -1,7 +1,7 @@
 # Implementation Plan & Progress Tracker
 
-**Last updated:** 2026-07-04  
-**Current phase:** Phase 4 — Appointment Booking (complete); Phase 5 — Appointment Lifecycle next
+**Last updated:** 2026-07-07  
+**Current phase:** Phase 5 — Appointment Lifecycle (complete); Phase 6 — Validation & Error Handling next
 
 Use this document to track what is done, in progress, and pending. Update checkboxes and the phase summary when tasks land.
 
@@ -24,9 +24,9 @@ Use this document to track what is done, in progress, and pending. Update checkb
 | 2 | Authentication | ✅ Complete | JWT, User, register/login; `[Authorize]` on `/api/auth/me` only until Phase 3 |
 | 3 | Core CRUD Endpoints | ✅ Complete | All 8 features done |
 | 4 | Appointment Booking | ✅ Complete | Availability, create, list endpoints; `Phase4AppointmentBooking` migration |
-| 5 | Appointment Lifecycle | ⬜ Not started | `AppointmentStatus` enum in code; no PATCH/cancel API yet |
+| 5 | Appointment Lifecycle | ✅ Complete | PATCH status, POST cancel, 2h customer cutoff, lifecycle migration |
 | 6 | Validation & Error Handling | ⬜ Not started | Manual validation in auth only |
-| 7 | Testing | 🔶 Partial | 132 unit tests; availability engine + appointment service tests |
+| 7 | Testing | 🔶 Partial | 189 unit tests; availability engine + appointment lifecycle tests |
 | 8 | API Documentation | 🔶 Partial | `MapOpenApi()` in dev; no Swashbuckle / JWT UI |
 
 ---
@@ -111,13 +111,20 @@ See [PHASE_4_APPOINTMENT_BOOKING_PLAN.md](./PHASE_4_APPOINTMENT_BOOKING_PLAN.md)
 
 ---
 
-## Phase 5 — Appointment Lifecycle ⬜
+## Phase 5 — Appointment Lifecycle ✅
 
 | Task | Status |
 |------|--------|
-| `PATCH /appointments/:id/status` — valid transitions only | ⬜ |
-| Enforce transition rules (e.g. no `Completed` → `Confirmed`) | ⬜ |
-| `POST /appointments/:id/cancel` — cancel with reason | ⬜ |
+| `PATCH /appointments/:id/status` — valid transitions only | ✅ |
+| Enforce transition rules (e.g. no `Scheduled` → `Completed`) | ✅ |
+| `POST /appointments/:id/cancel` — cancel with reason | ✅ |
+
+**Schema changes (`AddAppointmentLifecycleFields` migration):**
+
+- `Appointment.CancellationReason`, `StartedAtUtc`, `ClosedAtUtc`
+- `AppointmentStatusTransitions` + `AppointmentLifecycleRules` (2-hour customer cancel cutoff; staff override)
+
+See [PHASE_5_APPOINTMENT_LIFECYCLE_PLAN.md](./PHASE_5_APPOINTMENT_LIFECYCLE_PLAN.md) for design details.
 
 ---
 
@@ -140,7 +147,7 @@ See [PHASE_4_APPOINTMENT_BOOKING_PLAN.md](./PHASE_4_APPOINTMENT_BOOKING_PLAN.md)
 |------|--------|----------|
 | Install xUnit, Moq, `Microsoft.EntityFrameworkCore.InMemory` | ✅ | `universal-scheduler-be.Tests/universal-scheduler-be.Tests.csproj` |
 | Unit test availability engine (slots + conflicts) | ✅ | `AvailabilityEngineTests`, `AppointmentServiceTests` |
-| Unit test status transition rules | ⬜ | Blocked on Phase 5 |
+| Unit test status transition rules | ✅ | `AppointmentStatusTransitionsTests`, `AppointmentLifecycleRulesTests`, `AppointmentServiceTests` lifecycle cases |
 | Integration test booking (happy path + double-booking) | ⬜ | No `WebApplicationFactory` yet |
 | Auth unit tests | ✅ | 18 tests in `AuthServiceTests`, `JwtTokenServiceTests`, `AuthControllerTests` |
 | Auth HTTP integration tests | ↪ | Deferred — see `reflections/2026-06-10_auth_implementation.md` |
@@ -161,8 +168,8 @@ See [PHASE_4_APPOINTMENT_BOOKING_PLAN.md](./PHASE_4_APPOINTMENT_BOOKING_PLAN.md)
 
 ## Recommended next session
 
-1. **Phase 5** — **Appointment Lifecycle** (status transitions, cancel).
-2. Apply migration: `dotnet ef database update` (adds `Phase4AppointmentBooking`).
+1. **Phase 6** — **Validation & Error Handling** (FluentValidation, global exception handler).
+2. Apply migration: `dotnet ef database update` (adds `AddAppointmentLifecycleFields`).
 3. Re-login after permission migrations if JWT claims are stale.
 
 ---

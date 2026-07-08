@@ -11,6 +11,9 @@ public class Appointment
     public DateOnly BookingDate { get; set; }
     public int SecondsFromMidnight { get; set; }
     public AppointmentStatus Status { get; set; } = AppointmentStatus.Scheduled;
+    public string? CancellationReason { get; set; }
+    public DateTime? StartedAtUtc { get; set; }
+    public DateTime? ClosedAtUtc { get; set; }
 
     public Customer Customer { get; set; } = null!;
     public Vehicle Vehicle { get; set; } = null!;

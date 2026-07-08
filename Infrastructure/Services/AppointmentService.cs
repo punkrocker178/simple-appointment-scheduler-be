@@ -266,6 +266,133 @@ public class AppointmentService : IAppointmentService
             appointments.Select(a => ToResponse(a, a.ServiceType.DurationMinutes)).ToList());
     }
 
+    public async Task<ServiceResult<AppointmentResponse>> UpdateStatusAsync(
+        Guid id,
+        UpdateAppointmentStatusRequest request,
+        AppointmentCallerContext caller,
+        CancellationToken cancellationToken = default)
+    {
+        if (!AppointmentLifecycleRules.IsStaffOrAdmin(caller.Role))
+        {
+            return ServiceResult<AppointmentResponse>.Forbidden(
+                "Only staff can update appointment status.");
+        }
+
+        if (request.Status is not (AppointmentStatus.InProgress or AppointmentStatus.Completed))
+        {
+            return ServiceResult<AppointmentResponse>.BadRequest(
+                "Status updates must target InProgress or Completed.");
+        }
+
+        var appointment = await _db.Appointments
+            .Include(a => a.ServiceType)
+            .FirstOrDefaultAsync(a => a.Id == id, cancellationToken);
+
+        if (appointment is null)
+        {
+            return ServiceResult<AppointmentResponse>.NotFound("Appointment not found.");
+        }
+
+        var transitionError = AppointmentStatusTransitions.GetTransitionError(
+            appointment.Status,
+            request.Status);
+
+        if (transitionError is not null)
+        {
+            return ServiceResult<AppointmentResponse>.Conflict(transitionError);
+        }
+
+        var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
+        appointment.Status = request.Status;
+
+        if (request.Status == AppointmentStatus.InProgress)
+        {
+            appointment.StartedAtUtc = utcNow;
+        }
+        else if (request.Status == AppointmentStatus.Completed)
+        {
+            appointment.ClosedAtUtc = utcNow;
+        }
+
+        await _db.SaveChangesAsync(cancellationToken);
+
+        return ServiceResult<AppointmentResponse>.Ok(
+            ToResponse(appointment, appointment.ServiceType.DurationMinutes));
+    }
+
+    public async Task<ServiceResult<AppointmentResponse>> CancelAsync(
+        Guid id,
+        CancelAppointmentRequest request,
+        AppointmentCallerContext caller,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(request.Reason))
+        {
+            return ServiceResult<AppointmentResponse>.BadRequest("Cancellation reason is required.");
+        }
+
+        if (request.Reason.Length > 500)
+        {
+            return ServiceResult<AppointmentResponse>.BadRequest(
+                "Cancellation reason must be 500 characters or fewer.");
+        }
+
+        var appointment = await _db.Appointments
+            .Include(a => a.ServiceType)
+            .FirstOrDefaultAsync(a => a.Id == id, cancellationToken);
+
+        if (appointment is null)
+        {
+            return ServiceResult<AppointmentResponse>.NotFound("Appointment not found.");
+        }
+
+        if (AppointmentStatusTransitions.IsTerminal(appointment.Status))
+        {
+            return ServiceResult<AppointmentResponse>.Conflict(
+                "Appointment is in a terminal state and cannot be cancelled.");
+        }
+
+        var isStaffOrAdmin = AppointmentLifecycleRules.IsStaffOrAdmin(caller.Role);
+
+        if (!isStaffOrAdmin)
+        {
+            if (caller.CustomerId is null || caller.CustomerId != appointment.CustomerId)
+            {
+                return ServiceResult<AppointmentResponse>.Forbidden(
+                    "You can only cancel your own appointments.");
+            }
+
+            if (!AppointmentLifecycleRules.CanCustomerCancel(appointment.Status))
+            {
+                return ServiceResult<AppointmentResponse>.Forbidden(
+                    "Only staff can cancel in-progress appointments.");
+            }
+
+            if (AppointmentLifecycleRules.IsWithinCancellationCutoff(
+                    appointment.BookingDate,
+                    appointment.SecondsFromMidnight,
+                    _timeProvider.GetUtcNow()))
+            {
+                return ServiceResult<AppointmentResponse>.BadRequest(
+                    "Appointments cannot be cancelled within 2 hours of the start time.");
+            }
+        }
+        else if (!AppointmentLifecycleRules.CanStaffCancel(appointment.Status))
+        {
+            return ServiceResult<AppointmentResponse>.Conflict(
+                "Appointment is in a terminal state and cannot be cancelled.");
+        }
+
+        appointment.Status = AppointmentStatus.Cancelled;
+        appointment.CancellationReason = request.Reason.Trim();
+        appointment.ClosedAtUtc = _timeProvider.GetUtcNow().UtcDateTime;
+
+        await _db.SaveChangesAsync(cancellationToken);
+
+        return ServiceResult<AppointmentResponse>.Ok(
+            ToResponse(appointment, appointment.ServiceType.DurationMinutes));
+    }
+
     private static AppointmentResponse ToResponse(Appointment appointment, int durationMinutes) =>
         new()
         {
@@ -278,6 +405,9 @@ public class AppointmentService : IAppointmentService
             BookingDate = appointment.BookingDate,
             SecondsFromMidnight = appointment.SecondsFromMidnight,
             DurationMinutes = durationMinutes,
-            Status = appointment.Status
+            Status = appointment.Status,
+            CancellationReason = appointment.CancellationReason,
+            StartedAtUtc = appointment.StartedAtUtc,
+            ClosedAtUtc = appointment.ClosedAtUtc
         };
 }

@@ -247,7 +247,7 @@ Non-secret defaults live in `appsettings.json` (`Jwt:Issuer`, `Jwt:Audience`, `A
 - `Appointment` links multiple entities for scheduling
 
 ### Current State
-- **Progress tracker**: [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md) — Phases 1–3 complete; Phase 4 (Appointment Booking) next
+- **Progress tracker**: [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md) — Phases 1–5 complete; Phase 6 (Validation) next
 - Database schema established with migrations
 - Entity Framework configured with PostgreSQL
 - Authentication entities (User/Role/Permission) migrated with role/permission seed data
@@ -260,12 +260,13 @@ Non-secret defaults live in `appsettings.json` (`Jwt:Issuer`, `Jwt:Audience`, `A
 - **Customer CRUD** implemented — `GET/POST/PUT /api/customers` with `customers:read` / `customers:write` (Admin + Staff)
 - **Vehicle CRUD** implemented — nested under `/api/customers/{id}/vehicles` with `vehicles:read` / `vehicles:write` (Admin + Staff)
 - **Appointment Booking (Phase 4)** — `GET /api/availability`, `POST /api/appointments`, `GET /api/appointments/{id}`, `GET /api/customers/{id}/appointments`, `GET /api/dealerships/{id}/appointments?date=` (`AvailabilityEngine`, `AvailabilityService`, `AppointmentService`)
+- **Appointment Lifecycle (Phase 5)** — `PATCH /api/appointments/{id}/status`, `POST /api/appointments/{id}/cancel`; 2h customer cancel cutoff; staff two-step completion
 - **Customer self-service (F7)** — `User.CustomerId` link; `GET/PUT /api/me/customer`, `GET/POST/PUT /api/me/vehicles`, `GET /api/me/appointments`; `GET /api/booking/dealership` (default dealership); `servicetypes:read:customer` for service-type catalog; appointment ownership on create/read
-- Unit test project with **155 tests** (`universal-scheduler-be.Tests`)
+- Unit test project with **189 tests** (`universal-scheduler-be.Tests`)
 - VS Code debug config for .NET 10 (`.vscode/launch.json`)
 - Cursor rule `.cursor/rules/agents-md.mdc` points agents to this file each session
 - Session notes: [reflections/2026-06-11_dealership_crud.md](reflections/2026-06-11_dealership_crud.md)
-- **Next priority**: Phase 5 — **Appointment Lifecycle** (status transitions, cancel)
+- **Next priority**: Phase 6 — **Validation & Error Handling** (FluentValidation, global exception handler)
 
 ---
 
