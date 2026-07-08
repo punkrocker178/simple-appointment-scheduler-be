@@ -25,6 +25,12 @@ public interface IAppointmentService
         DateOnly date,
         CancellationToken cancellationToken = default);
 
+    Task<ServiceResult<IReadOnlyList<AppointmentResponse>>> GetByDealershipAndDateRangeAsync(
+        Guid dealershipId,
+        DateOnly from,
+        DateOnly to,
+        CancellationToken cancellationToken = default);
+
     Task<ServiceResult<AppointmentResponse>> UpdateStatusAsync(
         Guid id,
         UpdateAppointmentStatusRequest request,

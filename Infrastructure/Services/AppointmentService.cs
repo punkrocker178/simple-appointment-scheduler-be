@@ -266,6 +266,48 @@ public class AppointmentService : IAppointmentService
             appointments.Select(a => ToResponse(a, a.ServiceType.DurationMinutes)).ToList());
     }
 
+    public async Task<ServiceResult<IReadOnlyList<AppointmentResponse>>> GetByDealershipAndDateRangeAsync(
+        Guid dealershipId,
+        DateOnly from,
+        DateOnly to,
+        CancellationToken cancellationToken = default)
+    {
+        if (to < from)
+        {
+            return ServiceResult<IReadOnlyList<AppointmentResponse>>.BadRequest(
+                "End date must be on or after start date.");
+        }
+
+        if ((to.DayNumber - from.DayNumber) > 14)
+        {
+            return ServiceResult<IReadOnlyList<AppointmentResponse>>.BadRequest(
+                "Date range must not exceed 14 days.");
+        }
+
+        var dealershipExists = await _db.Dealerships
+            .AsNoTracking()
+            .AnyAsync(d => d.Id == dealershipId, cancellationToken);
+
+        if (!dealershipExists)
+        {
+            return ServiceResult<IReadOnlyList<AppointmentResponse>>.NotFound(
+                "Dealership not found.");
+        }
+
+        var appointments = await _db.Appointments
+            .AsNoTracking()
+            .Include(a => a.ServiceType)
+            .Where(a => a.BookingDate >= from
+                && a.BookingDate <= to
+                && a.ServiceType.DealershipId == dealershipId)
+            .OrderBy(a => a.BookingDate)
+            .ThenBy(a => a.SecondsFromMidnight)
+            .ToListAsync(cancellationToken);
+
+        return ServiceResult<IReadOnlyList<AppointmentResponse>>.Ok(
+            appointments.Select(a => ToResponse(a, a.ServiceType.DurationMinutes)).ToList());
+    }
+
     public async Task<ServiceResult<AppointmentResponse>> UpdateStatusAsync(
         Guid id,
         UpdateAppointmentStatusRequest request,

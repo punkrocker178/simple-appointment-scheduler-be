@@ -203,6 +203,78 @@ public class AppointmentServiceTests
         Assert.Single(result.Data);
     }
 
+    [Fact]
+    public async Task GetByDealershipAndDateRangeAsync_ReturnsAppointmentsForRange()
+    {
+        await using var context = AuthTestData.CreateContext();
+        SeedSchedulingGraph(context);
+        context.Appointments.Add(new Appointment
+        {
+            Id = Guid.NewGuid(),
+            CustomerId = _customerId,
+            VehicleId = _vehicleId,
+            ServiceTypeId = _serviceTypeId,
+            TechnicianId = _technicianId,
+            ServiceBayId = _bayId,
+            BookingDate = BookingDate,
+            SecondsFromMidnight = 28_800,
+            Status = AppointmentStatus.Scheduled
+        });
+        context.Appointments.Add(new Appointment
+        {
+            Id = Guid.NewGuid(),
+            CustomerId = _customerId,
+            VehicleId = _vehicleId,
+            ServiceTypeId = _serviceTypeId,
+            TechnicianId = _technicianId,
+            ServiceBayId = _bayId,
+            BookingDate = BookingDate.AddDays(1),
+            SecondsFromMidnight = 30_600,
+            Status = AppointmentStatus.Scheduled
+        });
+        await context.SaveChangesAsync();
+
+        var service = CreateService(context);
+        var result = await service.GetByDealershipAndDateRangeAsync(
+            _dealershipId,
+            BookingDate,
+            BookingDate.AddDays(1));
+
+        Assert.Equal(StatusCodes.Status200OK, result.StatusCode);
+        Assert.NotNull(result.Data);
+        Assert.Equal(2, result.Data.Count);
+    }
+
+    [Fact]
+    public async Task GetByDealershipAndDateRangeAsync_ExceedsMaxRange_ReturnsBadRequest()
+    {
+        await using var context = AuthTestData.CreateContext();
+        SeedSchedulingGraph(context);
+        var service = CreateService(context);
+
+        var result = await service.GetByDealershipAndDateRangeAsync(
+            _dealershipId,
+            BookingDate,
+            BookingDate.AddDays(15));
+
+        Assert.Equal(StatusCodes.Status400BadRequest, result.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetByDealershipAndDateRangeAsync_InvalidRange_ReturnsBadRequest()
+    {
+        await using var context = AuthTestData.CreateContext();
+        SeedSchedulingGraph(context);
+        var service = CreateService(context);
+
+        var result = await service.GetByDealershipAndDateRangeAsync(
+            _dealershipId,
+            BookingDate.AddDays(1),
+            BookingDate);
+
+        Assert.Equal(StatusCodes.Status400BadRequest, result.StatusCode);
+    }
+
     private AppointmentService CreateService(Infrastructure.Data.ApplicationDbContext context) =>
         new(context, new FixedTimeProvider(FixedNow));
 
