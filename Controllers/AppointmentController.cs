@@ -89,10 +89,33 @@ public class AppointmentController : ControllerBase
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> GetByDealershipAndDate(
         Guid dealershipId,
-        [FromQuery] string date,
+        [FromQuery] string? date,
+        [FromQuery] string? from,
+        [FromQuery] string? to,
         CancellationToken cancellationToken)
     {
-        if (!DateOnly.TryParseExact(date, "yyyy-MM-dd", out var bookingDate))
+        if (!string.IsNullOrEmpty(from) && !string.IsNullOrEmpty(to))
+        {
+            if (!DateOnly.TryParseExact(from, "yyyy-MM-dd", out var fromDate)
+                || !DateOnly.TryParseExact(to, "yyyy-MM-dd", out var toDate))
+            {
+                return Problem(
+                    detail: "Dates must be in YYYY-MM-DD format.",
+                    statusCode: StatusCodes.Status400BadRequest,
+                    title: "Bad Request");
+            }
+
+            var rangeResult = await _appointmentService.GetByDealershipAndDateRangeAsync(
+                dealershipId,
+                fromDate,
+                toDate,
+                cancellationToken);
+
+            return ToActionResult(rangeResult);
+        }
+
+        if (string.IsNullOrEmpty(date)
+            || !DateOnly.TryParseExact(date, "yyyy-MM-dd", out var bookingDate))
         {
             return Problem(
                 detail: "Date must be in YYYY-MM-DD format.",

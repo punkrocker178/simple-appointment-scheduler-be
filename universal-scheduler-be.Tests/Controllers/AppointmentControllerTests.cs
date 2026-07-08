@@ -115,7 +115,28 @@ public class AppointmentControllerTests
 
         var actionResult = await controller.GetByDealershipAndDate(
             Guid.NewGuid(),
-            "not-a-date",
+            date: "not-a-date",
+            from: null,
+            to: null,
+            CancellationToken.None);
+
+        var problemResult = Assert.IsType<ObjectResult>(actionResult);
+        Assert.Equal(StatusCodes.Status400BadRequest, problemResult.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetByDealershipAndDate_ReturnsBadRequestForInvalidFromDate()
+    {
+        var appointmentService = new Mock<IAppointmentService>();
+        var controller = new AppointmentController(
+            appointmentService.Object,
+            Mock.Of<IAppointmentCallerResolver>());
+
+        var actionResult = await controller.GetByDealershipAndDate(
+            Guid.NewGuid(),
+            date: null,
+            from: "not-a-date",
+            to: "2026-07-07",
             CancellationToken.None);
 
         var problemResult = Assert.IsType<ObjectResult>(actionResult);
